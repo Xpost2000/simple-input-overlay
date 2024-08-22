@@ -183,7 +183,6 @@ static void draw_controller(SDL_Renderer* renderer)
                 SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_RT_FILL], color.r, color.g, color.b);
             }
 
-            SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_RT_FILL], PUPPETPIECE_COLOR);
             SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_RT_FILL], 0, &destination);
 
             SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_RT], 255, 255, 255);
