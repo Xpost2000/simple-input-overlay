@@ -40,7 +40,6 @@
 
 // Otherwise the program would be like 1k+ lines.
 bool                g_quit                   = false;
-bool                g_borderless             = false;
 SDL_Window*         g_window                 = nullptr;
 SDL_Renderer*       g_renderer               = nullptr;
 SDL_GameController* g_focused_gamecontroller = nullptr;
@@ -180,6 +179,55 @@ static void WIN32_color_selector(SDL_Window* window, SDL_Color* color)
 }
 #endif
 
+struct DragEventData {
+    bool dragging;
+    int window_top_left_x;
+    int window_top_left_y;
+
+    int offset_x;
+    int offset_y;
+
+    DragEventData() : dragging(false)
+    {
+        
+    }
+
+    void start_dragging(SDL_Window* window)
+    {
+        if (dragging == false) {
+            dragging = true;
+
+            // top left
+            SDL_GetWindowPosition(window, &window_top_left_x, &window_top_left_y);
+
+            POINT screen_cursor;
+            GetCursorPos(&screen_cursor);
+            offset_x = window_top_left_x - screen_cursor.x;
+            offset_y = window_top_left_y - screen_cursor.y;
+        }
+    }
+
+    bool get_new_final_position(int* pos)
+    {
+        if (dragging)
+        {
+            POINT screen_cursor;
+            GetCursorPos(&screen_cursor);
+            *pos     = offset_x + screen_cursor.x;
+            *(pos+1) = offset_y + screen_cursor.y;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    void stop_dragging(void)
+    {
+        dragging = false;
+    }
+};
+
 static int application_main(int argc, char** argv)
 {
     load_controller_assets();
@@ -187,6 +235,8 @@ static int application_main(int argc, char** argv)
     write_config(g_settings);
     initialize_context_menu();
     init_controller_keymap();
+
+    DragEventData drag_data = {};
 
     while (!g_quit) {
         SDL_Event event;
@@ -218,16 +268,20 @@ static int application_main(int argc, char** argv)
                             case 11: {
                                 WIN32_color_selector(g_window, &g_settings.activated_color);
                             } break;
-                            case 12: { // borderless toggle
-                                if (!g_borderless) {
-                                    SDL_SetWindowBordered(g_window, SDL_FALSE);
-                                    g_borderless = true;
-                                } else {
-                                    SDL_SetWindowBordered(g_window, SDL_TRUE);
-                                    g_borderless = false;
-                                }
-                            } break;
                         }
+                    } else if (event.button.button == SDL_BUTTON_LEFT) {
+                        drag_data.start_dragging(g_window);
+                    }
+                } break;
+                case SDL_MOUSEBUTTONUP: {
+                    if (event.button.button == SDL_BUTTON_LEFT)  {
+                        drag_data.stop_dragging();
+                    }
+                } break;
+                case SDL_MOUSEMOTION: {
+                    int position[2];
+                    if (drag_data.get_new_final_position(position)) {
+                        SDL_SetWindowPosition(g_window, position[0], position[1]);
                     }
                 } break;
                 case SDL_KEYUP:
@@ -282,7 +336,7 @@ int main(int argc, char** argv)
     {
         g_window = SDL_CreateWindow(
             "InputOverlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 10, 10,
-            SDL_WINDOW_SHOWN);  // Resizable needs to check for multiple size.
+            SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);  // Resizable needs to check for multiple size.
 
         g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
 
@@ -373,7 +427,6 @@ static void initialize_context_menu(void)
     insert_menu_text_item(g_context_menu, "Controller Color", id++); // 9
     insert_menu_text_item(g_context_menu, "Button Color", id++);     // 10
     insert_menu_text_item(g_context_menu, "Activation Color", id++); // 11
-    insert_menu_text_item(g_context_menu, "Borderless", id++);       // 12
 
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Etc.", id++, false);
