@@ -75,11 +75,11 @@ static inline Uint8 hexdigit_value(char d)
     return (Uint8)(-1);
 }
 
-static inline char lowerch(char c)
+static inline char nibble_to_hex(Uint8 nibble)
 {
-    if (c >= 'A' && c <= 'Z')
-        return c - 32;
-    return c;
+    static const char* _lookup = "0123456789abcdef";
+    nibble &= 0xF;
+    return _lookup[nibble];
 }
 
 static Uint8 parse_hex_pair(const char byte[2])
@@ -98,6 +98,10 @@ SDL_Color color_from_hex_string(const char* hexstr)
     // starts with hash.
     SDL_Color result = {};
 
+    if (strlen(hexstr) != 7) {
+        return result;   
+    }
+
     if (hexstr[0] != '#') {
         return result;
     }
@@ -112,13 +116,21 @@ SDL_Color color_from_hex_string(const char* hexstr)
     return result;
 }
 
+static size_t hexout(char* buf, Uint8 byte)
+{
+    buf[0] = nibble_to_hex(byte >> 4);
+    buf[1] = nibble_to_hex(byte >> 0);
+    return 2; 
+}
+
 // formatted as standard #AABBCC
 // hexcodes.
 char* color_into_hex_string(SDL_Color color)
 {
     static char buf[16];
-    size_t written = 0;
-    written += snprintf(buf+written, sizeof(buf)-written, "#%x%x%x",
-                        (Uint8)color.r, (Uint8)color.g, (Uint8)color.b);
+    buf[0] = '#';
+    hexout(buf+1,   (Uint8)color.r);
+    hexout(buf+3, (Uint8)color.g);
+    hexout(buf+5, (Uint8)color.b);
     return buf;
 }

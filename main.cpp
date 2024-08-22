@@ -34,10 +34,6 @@
 #define XBOX_IMAGE_HEIGHT (940)
 #define XBOX_JOYSTICK_SZ  (169)
 
-#define CONTROLLER_COLOR  0, 71, 171
-#define PUPPETPIECE_COLOR 15,  30,  30
-#define ACTIVATED_COLOR   200, 30,  50
-
 #define MAX_JOYSTICK_DISPLACEMENT_PX (80)
 #define MAX_TRIGGER_DISPLACEMENT_PX (25)
 
@@ -467,61 +463,17 @@ int main(int argc, char** argv)
 // or I would totally be okay with just turning this into an enum class situation again.
 static void load_xbox_controller_assets(void)
 {
-    static const char* asset_image_list[] = {
-        "Controllers/Xbox/Base.png",
-        "Controllers/Xbox/BaseFillmask.png",
-        "Controllers/Xbox/ButtonAFillmask.png",
-        "Controllers/Xbox/ButtonBFillmask.png",
-        "Controllers/Xbox/ButtonXFillmask.png",
-        "Controllers/Xbox/ButtonYFillmask.png",
-        "Controllers/Xbox/ButtonDpadUpFillmask.png",
-        "Controllers/Xbox/ButtonDpadDownFillmask.png",
-        "Controllers/Xbox/ButtonDpadLeftFillmask.png",
-        "Controllers/Xbox/ButtonDpadRightFillmask.png",
-        "Controllers/Xbox/ButtonMenuFillmask.png",
-        "Controllers/Xbox/ButtonStartFillmask.png",
-        "Controllers/Xbox/ButtonRBFillmask.png",
-        "Controllers/Xbox/ButtonLBFillmask.png",
-        "Controllers/Xbox/Joystick.png",
-        "Controllers/Xbox/JoystickFillMask.png",
-        "Controllers/Xbox/RightTrigger.png",
-        "Controllers/Xbox/RightTriggerFillmask.png",
-        "Controllers/Xbox/LeftTrigger.png",
-        "Controllers/Xbox/LeftTriggerFillmask.png",
-    };
-
     for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
-        g_xbox_controller_assets[index] = load_image_from_file(g_renderer, asset_image_list[index]);
+        g_xbox_controller_assets[index] =
+            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_XBOX][index]);
     }
 }
 
 static void load_playstation_controller_assets(void)
 {
-    static const char* asset_image_list[] = {
-        "Controllers/Playstation/Base.png",
-        "Controllers/Playstation/BaseFillmask.png",
-        "Controllers/Playstation/ButtonCrossFillmask.png",
-        "Controllers/Playstation/ButtonCircleFillmask.png",
-        "Controllers/Playstation/ButtonSquareFillmask.png",
-        "Controllers/Playstation/ButtonTriangleFillmask.png",
-        "Controllers/Playstation/ButtonDpadUpFillmask.png",
-        "Controllers/Playstation/ButtonDpadDownFillmask.png",
-        "Controllers/Playstation/ButtonDpadLeftFillmask.png",
-        "Controllers/Playstation/ButtonDpadRightFillmask.png",
-        "Controllers/Playstation/ButtonMenuFillmask.png",
-        "Controllers/Playstation/ButtonStartFillmask.png",
-        "Controllers/Playstation/ButtonRBFillmask.png",
-        "Controllers/Playstation/ButtonLBFillmask.png",
-        "Controllers/Playstation/Joystick.png",
-        "Controllers/Playstation/JoystickFillMask.png",
-        "Controllers/Playstation/RightTrigger.png",
-        "Controllers/Playstation/RightTriggerFillmask.png",
-        "Controllers/Playstation/LeftTrigger.png",
-        "Controllers/Playstation/LeftTriggerFillmask.png",
-    };
-
     for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
-        g_playstation_controller_assets[index] = load_image_from_file(g_renderer, asset_image_list[index]);
+        g_playstation_controller_assets[index] =
+            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_PLAYSTATION][index]);
     }
 }
 
@@ -531,7 +483,7 @@ static void load_keyboard_key_assets(void)
 }
 
 // This is mostly win32.
-static void insert_menu_text_item(HMENU menu_parent, char* text, int id, bool selectable=true)
+static void insert_menu_text_item(HMENU menu_parent, const char* text, int id, bool selectable=true)
 {
     MENUITEMINFOA menu_item_info = {};
     {
@@ -546,8 +498,8 @@ static void insert_menu_text_item(HMENU menu_parent, char* text, int id, bool se
         menu_item_info.wID    = id;
         menu_item_info.hSubMenu = menu_parent;
         {
-            char* str = text;
-            menu_item_info.dwTypeData = str;
+            const char* str = text;
+            menu_item_info.dwTypeData = (LPSTR)str;
             menu_item_info.cch        = strlen(str);
         }
     }
