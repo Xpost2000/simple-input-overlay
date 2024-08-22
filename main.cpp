@@ -43,6 +43,13 @@ SDL_GameController* g_focused_gamecontroller = nullptr;
 #include "playstation_controller_asset_id.h"
 #include "xbox_controller_asset_id.h"
 
+enum ControllerAssetSet {
+    CONTROLLER_ASSET_SET_XBOX,
+    CONTROLLER_ASSET_SET_PLAYSTATION,
+};
+
+ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_PLAYSTATION;
+
 SDL_Texture* g_xbox_controller_assets[20];
 SDL_Texture* g_playstation_controller_assets[20];
 
@@ -56,6 +63,10 @@ SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUN
 
 // TODO: fill in
 SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
+    {519, 634},
+    {936, 634},
+    {0, 0},
+    {0, 0},
 };
 
 // NOTE: need to work on this later.
@@ -118,8 +129,8 @@ static void load_keyboard_key_assets(void);
 static void load_controller_assets(void)
 {
     load_xbox_controller_assets();
-#if 0
     load_playstation_controller_assets();
+#if 0
     load_keyboard_key_assets();
 #endif
 }
@@ -139,6 +150,17 @@ static void draw_controller(SDL_Renderer* renderer)
     SDL_Texture** controller_asset_set = g_xbox_controller_assets;
     SDL_Point*    puppeter_point_set   = g_xbox_controller_puppet_piece_placements;
 
+    switch (g_asset_set) {
+        case CONTROLLER_ASSET_SET_XBOX: {
+            controller_asset_set = g_xbox_controller_assets;
+            puppeter_point_set = g_xbox_controller_puppet_piece_placements;
+        } break;
+        case CONTROLLER_ASSET_SET_PLAYSTATION: {
+            controller_asset_set = g_playstation_controller_assets;
+            puppeter_point_set = g_playstation_controller_puppet_piece_placements;
+        } break;
+    }
+
     // adjust asset appearance.
     // I know it shouldn't be in this loop, idc.
     {
@@ -154,7 +176,7 @@ static void draw_controller(SDL_Renderer* renderer)
     // draw puppets background. (triggers)
     {
         {
-            auto point = g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_LEFT_TRIGGER];
+            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_LEFT_TRIGGER];
             SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO, point.y / IMAGE_SCALE_RATIO, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
 
             short axis_y = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) : 0;
@@ -172,7 +194,7 @@ static void draw_controller(SDL_Renderer* renderer)
         }
 
         {
-            auto point = g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_RIGHT_TRIGGER];
+            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_RIGHT_TRIGGER];
             SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO, point.y / IMAGE_SCALE_RATIO, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
 
             short axis_y = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) : 0;
@@ -213,7 +235,7 @@ static void draw_controller(SDL_Renderer* renderer)
     // draw puppet parts foreground. (joysticks)
     {
         {
-            auto point = g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT];
+            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT];
             SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, point.y / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
 
             short axis_x = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) : 0;
@@ -235,7 +257,7 @@ static void draw_controller(SDL_Renderer* renderer)
         }
 
         {
-            auto point = g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_JOYSTICK_RIGHT];
+            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_JOYSTICK_RIGHT];
             SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, point.y / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
 
             short axis_x = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) : 0;
