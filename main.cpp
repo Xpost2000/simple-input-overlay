@@ -19,6 +19,7 @@
  */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <commdlg.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
@@ -35,9 +36,14 @@
 
 // Otherwise the program would be like 1k+ lines.
 bool                g_quit                   = false;
+bool                g_borderless             = false;
 SDL_Window*         g_window                 = nullptr;
 SDL_Renderer*       g_renderer               = nullptr;
 SDL_GameController* g_focused_gamecontroller = nullptr;
+
+// Win32 Menus
+HMENU g_context_menu;
+// End Win32 Menus
 
 #include "controller_puppet_point_ids.h"
 #include "playstation_controller_asset_id.h"
@@ -48,7 +54,7 @@ enum ControllerAssetSet {
     CONTROLLER_ASSET_SET_PLAYSTATION,
 };
 
-ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_PLAYSTATION;
+ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_XBOX;
 
 SDL_Texture* g_xbox_controller_assets[20];
 SDL_Texture* g_playstation_controller_assets[20];
@@ -80,6 +86,11 @@ SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POI
 #define PUPPETPIECE_COLOR 15,  30,  30
 #define ACTIVATED_COLOR   200, 30,  50
 
+static SDL_Color g_controller_color = {CONTROLLER_COLOR};
+static SDL_Color g_button_color     = {PUPPETPIECE_COLOR};
+static SDL_Color g_activated_color  = {ACTIVATED_COLOR};
+
+
 // unscaled
 #define MAX_JOYSTICK_DISPLACEMENT_PX (80)
 #define MAX_TRIGGER_DISPLACEMENT_PX (25)
@@ -103,14 +114,19 @@ static SDL_Texture* load_image_from_file(SDL_Renderer* renderer, const char* pat
     return result;
 }
 
-// This requires a platform native solution.
-static void make_window_transparent(SDL_Window* window)
+HWND SDL_get_hwnd(SDL_Window* window)
 {
     SDL_SysWMinfo wm_info = {};
     SDL_VERSION(&wm_info.version);
     SDL_GetWindowWMInfo(window, &wm_info);
+    return wm_info.info.win.window;
+}
 
-    HWND windows_handle = wm_info.info.win.window;
+// This requires a platform native solution.
+static void make_window_transparent(SDL_Window* window)
+{
+#ifdef _WIN32
+    HWND windows_handle = SDL_get_hwnd(window);
 
     assert(SUCCEEDED(
                SetWindowLong(windows_handle,
@@ -121,6 +137,7 @@ static void make_window_transparent(SDL_Window* window)
     assert(SUCCEEDED(
                SetLayeredWindowAttributes(windows_handle, CHROMA_KEY_COLOR, 0, LWA_COLORKEY)
            ));
+#endif
 }
 
 static void load_xbox_controller_assets(void);
@@ -183,7 +200,7 @@ static void draw_controller(SDL_Renderer* renderer)
             destination.y += axis_y/32767.0f * SCALED_MAX_TRIGGER_DISPLACEMENT_PX;
 
             {
-                auto color = lerp_color(SDL_Color{ PUPPETPIECE_COLOR, 255 }, SDL_Color{ ACTIVATED_COLOR, 255 }, axis_y / 32767.0f);
+                auto color = lerp_color(g_button_color, g_activated_color, axis_y / 32767.0f);
                 SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_LT_FILL], color.r, color.g, color.b);
             }
 
@@ -201,7 +218,7 @@ static void draw_controller(SDL_Renderer* renderer)
             destination.y += axis_y/32767.0f * SCALED_MAX_TRIGGER_DISPLACEMENT_PX;
 
             {
-                auto color = lerp_color(SDL_Color{ PUPPETPIECE_COLOR, 255 }, SDL_Color{ ACTIVATED_COLOR, 255 }, axis_y / 32767.0f);
+                auto color = lerp_color(g_button_color, g_activated_color, axis_y / 32767.0f);
                 SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_RT_FILL], color.r, color.g, color.b);
             }
 
@@ -215,7 +232,7 @@ static void draw_controller(SDL_Renderer* renderer)
     // NOTE: enums are Xbox to be more obvious to read, but they are aligned for all controller types.
     {
         SDL_Rect destination = { 0, 0, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT };
-        SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], CONTROLLER_COLOR);
+        SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], g_controller_color.r, g_controller_color.g, g_controller_color.b);
         SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], 0, &destination);
 
         SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE], 255, 255, 255);
@@ -223,9 +240,9 @@ static void draw_controller(SDL_Renderer* renderer)
 
         for (unsigned part_index = XBOXCONTROLLER_ASSET_BUTTON_A_FILL; part_index < XBOXCONTROLLER_ASSET_JOYSTICK; ++part_index) {
             if (g_focused_gamecontroller && SDL_GameControllerGetButton(g_focused_gamecontroller, (SDL_GameControllerButton)g_part_id_to_button[part_index])) {
-                SDL_SetTextureColorMod(controller_asset_set[part_index], ACTIVATED_COLOR);
+                SDL_SetTextureColorMod(controller_asset_set[part_index], g_activated_color.r, g_activated_color.g, g_activated_color.b);
             } else {
-                SDL_SetTextureColorMod(controller_asset_set[part_index], PUPPETPIECE_COLOR);
+                SDL_SetTextureColorMod(controller_asset_set[part_index], g_button_color.r, g_button_color.g, g_button_color.b);
             }
 
             SDL_RenderCopy(renderer, controller_asset_set[part_index], 0, &destination);
@@ -245,9 +262,9 @@ static void draw_controller(SDL_Renderer* renderer)
             destination.y += axis_y/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
 
             if (SDL_GameControllerGetButton(g_focused_gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK)) {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], ACTIVATED_COLOR);
+                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_activated_color.r, g_activated_color.g, g_activated_color.b);
             } else {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], PUPPETPIECE_COLOR);
+                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_button_color.r, g_button_color.g, g_button_color.b);
             }
 
             SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], 0, &destination);
@@ -267,9 +284,9 @@ static void draw_controller(SDL_Renderer* renderer)
             destination.y += axis_y/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
 
             if (SDL_GameControllerGetButton(g_focused_gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK)) {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], ACTIVATED_COLOR);
+                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_activated_color.r, g_activated_color.g, g_activated_color.b);
             } else {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], PUPPETPIECE_COLOR);
+                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_button_color.r, g_button_color.g, g_button_color.b);
             }
 
             SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], 0, &destination);
@@ -280,9 +297,63 @@ static void draw_controller(SDL_Renderer* renderer)
     }
 }
 
+static void initialize_context_menu(void);
+static int  do_context_menu(int x, int y);
+
+static void assign_initial_controller_asset_set(SDL_GameController* game_controller)
+{
+    auto controller_type = SDL_GameControllerGetType(game_controller); 
+    switch (controller_type) {
+        case SDL_CONTROLLER_TYPE_XBOX360:
+        case SDL_CONTROLLER_TYPE_XBOXONE: {
+            g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+        } break;
+
+        case SDL_CONTROLLER_TYPE_PS3:
+        case SDL_CONTROLLER_TYPE_PS4:
+        case SDL_CONTROLLER_TYPE_PS5: {
+            g_asset_set = CONTROLLER_ASSET_SET_PLAYSTATION;
+        } break;
+
+        default:
+        case SDL_CONTROLLER_TYPE_UNKNOWN:
+        case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO:
+        case SDL_CONTROLLER_TYPE_VIRTUAL:
+        case SDL_CONTROLLER_TYPE_AMAZON_LUNA:
+        case SDL_CONTROLLER_TYPE_GOOGLE_STADIA:
+        case SDL_CONTROLLER_TYPE_NVIDIA_SHIELD:
+        case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
+        case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
+        case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: {
+            g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+        } break;
+    }
+}
+
+// WIN32...
+#ifdef _WIN32
+static void WIN32_color_selector(SDL_Window* window, SDL_Color* color)
+{
+    CHOOSECOLORA color_selector = {};
+    static COLORREF custom_color_set[16];
+    color_selector.lStructSize = sizeof(color_selector);
+    color_selector.hwndOwner = SDL_get_hwnd(window);
+    color_selector.rgbResult = RGB(color->r, color->g, color->b);
+    color_selector.lpCustColors = (LPDWORD) custom_color_set;
+    color_selector.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+    if (ChooseColor(&color_selector) == TRUE) {
+        color->r = (color_selector.rgbResult & 0x000000FF) >> 0;
+        color->g = (color_selector.rgbResult & 0x0000FF00) >> 8;
+        color->b = (color_selector.rgbResult & 0x00FF0000) >> 16;
+    }
+}
+#endif
+
 static int application_main(int argc, char** argv)
 {
     load_controller_assets();
+    initialize_context_menu();
 
     // setup keymap.
     {
@@ -309,6 +380,39 @@ static int application_main(int argc, char** argv)
                 case SDL_QUIT: {
                     g_quit = true;
                 } break;
+                case SDL_MOUSEBUTTONDOWN: {
+                    if (event.button.button == SDL_BUTTON_RIGHT) {
+                        int selected_option = 0;
+                        switch (selected_option = do_context_menu(event.button.x, event.button.y)) {
+                            case 4: { // Xbox
+                                g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+                            } break;
+                            case 5: { // Playstation
+                                g_asset_set = CONTROLLER_ASSET_SET_PLAYSTATION;
+                            } break;
+
+                            // Color selectors.
+                            case 9: {
+                                WIN32_color_selector(g_window, &g_controller_color);
+                            } break;
+                            case 10: {
+                                WIN32_color_selector(g_window, &g_button_color);
+                            } break;
+                            case 11: {
+                                WIN32_color_selector(g_window, &g_activated_color);
+                            } break;
+                            case 12: { // borderless toggle
+                                if (!g_borderless) {
+                                    SDL_SetWindowBordered(g_window, SDL_FALSE);
+                                    g_borderless = true;
+                                } else {
+                                    SDL_SetWindowBordered(g_window, SDL_TRUE);
+                                    g_borderless = false;
+                                }
+                            } break;
+                        }
+                    }
+                } break;
                 case SDL_KEYUP:
                 case SDL_KEYDOWN: {} break;
                 case SDL_CONTROLLERDEVICEADDED:
@@ -322,6 +426,7 @@ static int application_main(int argc, char** argv)
                             snprintf(tmp, 255, "Input Overlay : Controller - %s (%d)",
                                      SDL_GameControllerName(g_focused_gamecontroller), event_data.which);
                             SDL_SetWindowTitle(g_window, tmp);
+                            assign_initial_controller_asset_set(g_focused_gamecontroller);
                         }
                     } else {
                         SDL_GameControllerClose(g_focused_gamecontroller);
@@ -439,4 +544,77 @@ static void load_playstation_controller_assets(void)
 static void load_keyboard_key_assets(void)
 {
     assert(0 && "Not done.");
+}
+
+// This is mostly win32.
+static void insert_menu_text_item(HMENU menu_parent, char* text, int id, bool selectable=true)
+{
+    MENUITEMINFOA menu_item_info = {};
+    {
+        menu_item_info.cbSize = sizeof(menu_item_info);
+        menu_item_info.fMask = MIIM_TYPE | MIIM_ID | MIIM_STATE;
+        menu_item_info.fType = MFT_STRING;
+
+        if (!selectable) {
+            menu_item_info.fState = MFS_DISABLED;   
+        }
+
+        menu_item_info.wID    = id;
+        menu_item_info.hSubMenu = menu_parent;
+        {
+            char* str = text;
+            menu_item_info.dwTypeData = str;
+            menu_item_info.cch        = strlen(str);
+        }
+    }
+    InsertMenuItemA(menu_parent, id, false, &menu_item_info);
+}
+
+static void insert_menu_divider_item(HMENU menu_parent, int id)
+{
+    MENUITEMINFOA menu_item_info = {};
+    {
+        menu_item_info.cbSize = sizeof(menu_item_info);
+        menu_item_info.fMask = MIIM_TYPE | MIIM_ID | MIIM_STATE;
+        menu_item_info.fType = MFT_MENUBREAK;
+        menu_item_info.wID    = id;
+        menu_item_info.hSubMenu = menu_parent;
+    }
+    InsertMenuItemA(menu_parent, id, false, &menu_item_info);
+}
+
+static void initialize_context_menu(void)
+{
+    g_context_menu = CreatePopupMenu();
+    int id = 1;
+    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_text_item(g_context_menu, "Input Layout Presets", id++, false);
+    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_text_item(g_context_menu, "Preset: Xbox Controller", id++);
+    insert_menu_text_item(g_context_menu, "Preset: Dualsense Controller", id++);
+
+    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_text_item(g_context_menu, "Customization", id++, false);
+    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_text_item(g_context_menu, "Controller Color", id++); // 9
+    insert_menu_text_item(g_context_menu, "Button Color", id++);     // 10
+    insert_menu_text_item(g_context_menu, "Activation Color", id++); // 11
+    insert_menu_text_item(g_context_menu, "Borderless", id++);       // 12
+
+    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_text_item(g_context_menu, "Etc.", id++, false);
+    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_text_item(g_context_menu, "Version 0", id++, false);
+    insert_menu_text_item(g_context_menu, "Author: xpost2000", id++, false);
+}
+
+static int do_context_menu(int x, int y)
+{
+    POINT client_point = {x, y};
+    HWND window = SDL_get_hwnd(g_window);
+
+    ClientToScreen(window, &client_point);
+    return TrackPopupMenu(g_context_menu,
+                          TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_LEFTALIGN | TPM_BOTTOMALIGN,
+                          client_point.x, client_point.y, 0, window, 0);
 }
