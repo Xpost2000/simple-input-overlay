@@ -268,6 +268,11 @@ static int application_main(int argc, char** argv)
                             case 11: {
                                 WIN32_color_selector(g_window, &g_settings.activated_color);
                             } break;
+
+                            case 14: {
+                                SDL_Event ev = { .type = SDL_QUIT };
+                                SDL_PushEvent(&ev);
+                            } break;
                         }
                     } else if (event.button.button == SDL_BUTTON_LEFT) {
                         drag_data.start_dragging(g_window);
@@ -430,6 +435,7 @@ static void initialize_context_menu(void)
 
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Etc.", id++, false);
+    insert_menu_text_item(g_context_menu, "Exit / Quit", id++);
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Version 0", id++, false);
     insert_menu_text_item(g_context_menu, "Author: xpost2000", id++, false);
