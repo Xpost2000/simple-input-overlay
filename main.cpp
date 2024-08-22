@@ -1,7 +1,6 @@
 /*
- * InputOverlay
+ * Simple InputOverlay
  *
- * TODO: PSX controller view
  * TODO: Keyboard view
  * TODO: X11 Port.
  * TODO: refactor?
@@ -15,8 +14,8 @@
  * actually just been better off doing this raw!
  *
  * But SDL2 as a controller operator is still useful.
- *
  */
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <commdlg.h>
@@ -26,6 +25,31 @@
 #include <SDL2/SDL_image.h>
 
 #include <assert.h>
+#include "config.h"
+
+// NOTE: need to work on this later.
+// to change the size more.
+#define IMAGE_SCALE_RATIO (2)
+#define XBOX_IMAGE_WIDTH  (1452)
+#define XBOX_IMAGE_HEIGHT (940)
+#define XBOX_JOYSTICK_SZ  (169)
+
+#define CONTROLLER_COLOR  0, 71, 171
+#define PUPPETPIECE_COLOR 15,  30,  30
+#define ACTIVATED_COLOR   200, 30,  50
+
+#define MAX_JOYSTICK_DISPLACEMENT_PX (80)
+#define MAX_TRIGGER_DISPLACEMENT_PX (25)
+
+#define SCALED_MAX_JOYSTICK_DISPLACEMENT_PX (MAX_JOYSTICK_DISPLACEMENT_PX / IMAGE_SCALE_RATIO)
+#define SCALED_MAX_TRIGGER_DISPLACEMENT_PX  (MAX_TRIGGER_DISPLACEMENT_PX / IMAGE_SCALE_RATIO)
+
+#define SCALED_JOYSTICK_SZ                  (XBOX_JOYSTICK_SZ / IMAGE_SCALE_RATIO)
+#define SCALED_WINDOW_WIDTH                 (XBOX_IMAGE_WIDTH / IMAGE_SCALE_RATIO)
+#define SCALED_WINDOW_HEIGHT                (XBOX_IMAGE_HEIGHT / IMAGE_SCALE_RATIO)
+
+// This color is unlikely to ever be naturally selected...
+#define CHROMA_KEY_COLOR  (RGB(255, 255, 254))
 
 // Obviously this is a quick toy program so I'm not really trying write something
 // with quality from scratch for real, so we're just going to use the existing SDL2 renderer
@@ -48,62 +72,29 @@ HMENU g_context_menu;
 #include "controller_puppet_point_ids.h"
 #include "playstation_controller_asset_id.h"
 #include "xbox_controller_asset_id.h"
+#include "controller_asset_set.h"
 
-enum ControllerAssetSet {
-    CONTROLLER_ASSET_SET_XBOX,
-    CONTROLLER_ASSET_SET_PLAYSTATION,
-};
+static ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_XBOX;
 
-ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_XBOX;
-
-SDL_Texture* g_xbox_controller_assets[20];
-SDL_Texture* g_playstation_controller_assets[20];
+static SDL_Texture* g_xbox_controller_assets[20];
+static SDL_Texture* g_playstation_controller_assets[20];
 
 // NOTE: centered coordinates
-SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
+static SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
     {373, 416},
     {912, 618},
     {0, 0},
     {0, 0},
 };
 
-// TODO: fill in
-SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
+static SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
     {519, 634},
     {936, 634},
     {0, 0},
     {0, 0},
 };
 
-// NOTE: need to work on this later.
-// to change the size more.
-#define IMAGE_SCALE_RATIO (2)
-#define XBOX_IMAGE_WIDTH  (1452)
-#define XBOX_IMAGE_HEIGHT (940)
-#define XBOX_JOYSTICK_SZ  (169)
-
-#define CONTROLLER_COLOR  0, 71, 171
-#define PUPPETPIECE_COLOR 15,  30,  30
-#define ACTIVATED_COLOR   200, 30,  50
-
-static SDL_Color g_controller_color = {CONTROLLER_COLOR};
-static SDL_Color g_button_color     = {PUPPETPIECE_COLOR};
-static SDL_Color g_activated_color  = {ACTIVATED_COLOR};
-
-
-// unscaled
-#define MAX_JOYSTICK_DISPLACEMENT_PX (80)
-#define MAX_TRIGGER_DISPLACEMENT_PX (25)
-
-#define SCALED_MAX_JOYSTICK_DISPLACEMENT_PX (MAX_JOYSTICK_DISPLACEMENT_PX / IMAGE_SCALE_RATIO)
-#define SCALED_MAX_TRIGGER_DISPLACEMENT_PX  (MAX_TRIGGER_DISPLACEMENT_PX / IMAGE_SCALE_RATIO)
-
-#define SCALED_JOYSTICK_SZ                  (XBOX_JOYSTICK_SZ / IMAGE_SCALE_RATIO)
-#define SCALED_WINDOW_WIDTH                 (XBOX_IMAGE_WIDTH / IMAGE_SCALE_RATIO)
-#define SCALED_WINDOW_HEIGHT                (XBOX_IMAGE_HEIGHT / IMAGE_SCALE_RATIO)
-
-// This color is unlikely to ever be naturally selected...
-#define CHROMA_KEY_COLOR  (RGB(255, 255, 254))
+static OverlaySettings g_settings;
 
 static SDL_Texture* load_image_from_file(SDL_Renderer* renderer, const char* path)
 {
@@ -162,6 +153,84 @@ SDL_Color lerp_color(SDL_Color a, SDL_Color b, float t) {
 }
 
 static int g_part_id_to_button[64] = {};
+
+static inline void draw_controller_part_joystick(SDL_Renderer* renderer, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
+{
+    auto point = point_set[part_id];
+    SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, point.y / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
+
+    bool  is_left = (part_id == CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT);
+    short axis_x  = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, (is_left) ? SDL_CONTROLLER_AXIS_LEFTX : SDL_CONTROLLER_AXIS_RIGHTX) : 0;
+    short axis_y  = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, (is_left) ? SDL_CONTROLLER_AXIS_LEFTY : SDL_CONTROLLER_AXIS_RIGHTY) : 0;
+
+    destination.x += axis_x/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
+    destination.y += axis_y/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
+
+    if (SDL_GameControllerGetButton(g_focused_gamecontroller, (is_left) ? SDL_CONTROLLER_BUTTON_LEFTSTICK : SDL_CONTROLLER_BUTTON_RIGHTSTICK)) {
+        SDL_SetTextureColorMod(asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_settings.activated_color.r, g_settings.activated_color.g, g_settings.activated_color.b);
+    } else {
+        SDL_SetTextureColorMod(asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_settings.button_color.r, g_settings.button_color.g, g_settings.button_color.b);
+    }
+
+    SDL_RenderCopy(renderer, asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], 0, &destination);
+
+    SDL_SetTextureColorMod(asset_set[XBOXCONTROLLER_ASSET_JOYSTICK], 255, 255, 255);
+    SDL_RenderCopy(renderer, asset_set[XBOXCONTROLLER_ASSET_JOYSTICK], 0, &destination);
+}
+
+static inline void draw_controller_part_trigger(SDL_Renderer* renderer, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
+{
+    auto point = point_set[part_id];
+    SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO, point.y / IMAGE_SCALE_RATIO, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
+
+    bool is_left       = (part_id == CONTROLLER_PUPPET_POINT_LEFT_TRIGGER);
+    int  fillmask_id   = (is_left) ? XBOXCONTROLLER_ASSET_LT_FILL : XBOXCONTROLLER_ASSET_RT_FILL;
+    int  partsprite_id = (is_left) ? XBOXCONTROLLER_ASSET_LT : XBOXCONTROLLER_ASSET_RT;
+
+    short axis_y = (g_focused_gamecontroller) ?
+        SDL_GameControllerGetAxis(g_focused_gamecontroller,
+                                  (is_left) ? SDL_CONTROLLER_AXIS_TRIGGERLEFT : SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+        : 0;
+
+    destination.y += axis_y/32767.0f * SCALED_MAX_TRIGGER_DISPLACEMENT_PX;
+
+    {
+        auto color = lerp_color(g_settings.button_color, g_settings.activated_color, axis_y / 32767.0f);
+        SDL_SetTextureColorMod(asset_set[fillmask_id], color.r, color.g, color.b);
+    }
+
+    SDL_RenderCopy(renderer, asset_set[fillmask_id], 0, &destination);
+
+    SDL_SetTextureColorMod(asset_set[partsprite_id], 255, 255, 255);
+    SDL_RenderCopy(renderer, asset_set[partsprite_id], 0, &destination);
+}
+
+static void draw_controller_puppet_part(SDL_Renderer* renderer, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
+{
+    switch (part_id) {
+        case CONTROLLER_PUPPET_POINT_LEFT_TRIGGER:
+        case CONTROLLER_PUPPET_POINT_RIGHT_TRIGGER: {
+            draw_controller_part_trigger(renderer, part_id, asset_set, point_set);
+        } break;
+
+        case CONTROLLER_PUPPET_POINT_JOYSTICK_RIGHT:
+        case CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT: {
+            draw_controller_part_joystick(renderer, part_id, asset_set, point_set);
+        } break;
+    }
+}
+
+static void set_controller_visual_focus(SDL_Texture** asset_set)
+{
+    for (unsigned part_index = 0; part_index < XBOXCONTROLLER_ASSET_COUNT; ++part_index) {
+        if (g_focused_gamecontroller) {
+            SDL_SetTextureAlphaMod(asset_set[part_index], 255);
+        } else {
+            SDL_SetTextureAlphaMod(asset_set[part_index], 64);
+        }
+    }
+}
+
 static void draw_controller(SDL_Renderer* renderer)
 {
     SDL_Texture** controller_asset_set = g_xbox_controller_assets;
@@ -178,61 +247,15 @@ static void draw_controller(SDL_Renderer* renderer)
         } break;
     }
 
-    // adjust asset appearance.
-    // I know it shouldn't be in this loop, idc.
-    {
-        for (unsigned part_index = 0; part_index < XBOXCONTROLLER_ASSET_COUNT; ++part_index) {
-            if (g_focused_gamecontroller) {
-                SDL_SetTextureAlphaMod(controller_asset_set[part_index], 255);
-            } else {
-                SDL_SetTextureAlphaMod(controller_asset_set[part_index], 64);
-            }
-        }
-    }
-
-    // draw puppets background. (triggers)
-    {
-        {
-            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_LEFT_TRIGGER];
-            SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO, point.y / IMAGE_SCALE_RATIO, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
-
-            short axis_y = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) : 0;
-            destination.y += axis_y/32767.0f * SCALED_MAX_TRIGGER_DISPLACEMENT_PX;
-
-            {
-                auto color = lerp_color(g_button_color, g_activated_color, axis_y / 32767.0f);
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_LT_FILL], color.r, color.g, color.b);
-            }
-
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_LT_FILL], 0, &destination);
-
-            SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_LT], 255, 255, 255);
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_LT], 0, &destination);
-        }
-
-        {
-            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_RIGHT_TRIGGER];
-            SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO, point.y / IMAGE_SCALE_RATIO, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
-
-            short axis_y = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) : 0;
-            destination.y += axis_y/32767.0f * SCALED_MAX_TRIGGER_DISPLACEMENT_PX;
-
-            {
-                auto color = lerp_color(g_button_color, g_activated_color, axis_y / 32767.0f);
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_RT_FILL], color.r, color.g, color.b);
-            }
-
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_RT_FILL], 0, &destination);
-
-            SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_RT], 255, 255, 255);
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_RT], 0, &destination);
-        }
-    }
+    set_controller_visual_focus(controller_asset_set);
+    draw_controller_puppet_part(renderer, CONTROLLER_PUPPET_POINT_LEFT_TRIGGER, controller_asset_set, puppeter_point_set);
+    draw_controller_puppet_part(renderer, CONTROLLER_PUPPET_POINT_RIGHT_TRIGGER, controller_asset_set, puppeter_point_set);
 
     // NOTE: enums are Xbox to be more obvious to read, but they are aligned for all controller types.
+    // Draw_All_Controller_Parts.
     {
         SDL_Rect destination = { 0, 0, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT };
-        SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], g_controller_color.r, g_controller_color.g, g_controller_color.b);
+        SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], g_settings.controller_color.r, g_settings.controller_color.g, g_settings.controller_color.b);
         SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], 0, &destination);
 
         SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE], 255, 255, 255);
@@ -240,61 +263,17 @@ static void draw_controller(SDL_Renderer* renderer)
 
         for (unsigned part_index = XBOXCONTROLLER_ASSET_BUTTON_A_FILL; part_index < XBOXCONTROLLER_ASSET_JOYSTICK; ++part_index) {
             if (g_focused_gamecontroller && SDL_GameControllerGetButton(g_focused_gamecontroller, (SDL_GameControllerButton)g_part_id_to_button[part_index])) {
-                SDL_SetTextureColorMod(controller_asset_set[part_index], g_activated_color.r, g_activated_color.g, g_activated_color.b);
+                SDL_SetTextureColorMod(controller_asset_set[part_index], g_settings.activated_color.r, g_settings.activated_color.g, g_settings.activated_color.b);
             } else {
-                SDL_SetTextureColorMod(controller_asset_set[part_index], g_button_color.r, g_button_color.g, g_button_color.b);
+                SDL_SetTextureColorMod(controller_asset_set[part_index], g_settings.button_color.r, g_settings.button_color.g, g_settings.button_color.b);
             }
 
             SDL_RenderCopy(renderer, controller_asset_set[part_index], 0, &destination);
         }
     }
 
-    // draw puppet parts foreground. (joysticks)
-    {
-        {
-            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT];
-            SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, point.y / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
-
-            short axis_x = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_LEFTX) : 0;
-            short axis_y = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_LEFTY) : 0;
-
-            destination.x += axis_x/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
-            destination.y += axis_y/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
-
-            if (SDL_GameControllerGetButton(g_focused_gamecontroller, SDL_CONTROLLER_BUTTON_LEFTSTICK)) {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_activated_color.r, g_activated_color.g, g_activated_color.b);
-            } else {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_button_color.r, g_button_color.g, g_button_color.b);
-            }
-
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], 0, &destination);
-
-            SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK], 255, 255, 255);
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK], 0, &destination);
-        }
-
-        {
-            auto point = puppeter_point_set[CONTROLLER_PUPPET_POINT_JOYSTICK_RIGHT];
-            SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, point.y / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
-
-            short axis_x = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_RIGHTX) : 0;
-            short axis_y = (g_focused_gamecontroller) ? SDL_GameControllerGetAxis(g_focused_gamecontroller, SDL_CONTROLLER_AXIS_RIGHTY) : 0;
-
-            destination.x += axis_x/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
-            destination.y += axis_y/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
-
-            if (SDL_GameControllerGetButton(g_focused_gamecontroller, SDL_CONTROLLER_BUTTON_RIGHTSTICK)) {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_activated_color.r, g_activated_color.g, g_activated_color.b);
-            } else {
-                SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_button_color.r, g_button_color.g, g_button_color.b);
-            }
-
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], 0, &destination);
-
-            SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK], 255, 255, 255);
-            SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_JOYSTICK], 0, &destination);
-        }
-    }
+    draw_controller_puppet_part(renderer, CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT, controller_asset_set, puppeter_point_set);
+    draw_controller_puppet_part(renderer, CONTROLLER_PUPPET_POINT_JOYSTICK_RIGHT, controller_asset_set, puppeter_point_set);
 }
 
 static void initialize_context_menu(void);
@@ -347,12 +326,16 @@ static void WIN32_color_selector(SDL_Window* window, SDL_Color* color)
         color->g = (color_selector.rgbResult & 0x0000FF00) >> 8;
         color->b = (color_selector.rgbResult & 0x00FF0000) >> 16;
     }
+
+    write_config(g_settings);
 }
 #endif
 
 static int application_main(int argc, char** argv)
 {
     load_controller_assets();
+    load_config(g_settings);
+    write_config(g_settings);
     initialize_context_menu();
 
     // setup keymap.
@@ -393,13 +376,13 @@ static int application_main(int argc, char** argv)
 
                             // Color selectors.
                             case 9: {
-                                WIN32_color_selector(g_window, &g_controller_color);
+                                WIN32_color_selector(g_window, &g_settings.controller_color);
                             } break;
                             case 10: {
-                                WIN32_color_selector(g_window, &g_button_color);
+                                WIN32_color_selector(g_window, &g_settings.button_color);
                             } break;
                             case 11: {
-                                WIN32_color_selector(g_window, &g_activated_color);
+                                WIN32_color_selector(g_window, &g_settings.activated_color);
                             } break;
                             case 12: { // borderless toggle
                                 if (!g_borderless) {
@@ -450,6 +433,7 @@ static int application_main(int argc, char** argv)
         SDL_RenderPresent(g_renderer);
     }
 
+    write_config(g_settings);
     return 0;
 }
 
@@ -589,7 +573,7 @@ static void initialize_context_menu(void)
     int id = 1;
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Input Layout Presets", id++, false);
-    insert_menu_divider_item(g_context_menu, id++);
+    insert_menu_divider_item(g_context_menu, id++); // 3 (controller types start at 4)
     insert_menu_text_item(g_context_menu, "Preset: Xbox Controller", id++);
     insert_menu_text_item(g_context_menu, "Preset: Dualsense Controller", id++);
 
