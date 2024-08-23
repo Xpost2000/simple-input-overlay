@@ -57,14 +57,14 @@ static inline SDL_Color lerp_color(SDL_Color a, SDL_Color b, float t) {
 static inline void draw_controller_part_joystick(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
 {
     auto point = point_set[part_id];
-    SDL_Rect destination = {point.x / g_settings.image_scale_ratio - SCALED_JOYSTICK_SZ/2, point.y / g_settings.image_scale_ratio - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
+    SDL_Rect destination = {point.x / g_settings.image_scale_ratio - (XBOX_JOYSTICK_SZ/g_settings.image_scale_ratio)/2, point.y / g_settings.image_scale_ratio - (XBOX_JOYSTICK_SZ/g_settings.image_scale_ratio)/2, (XBOX_JOYSTICK_SZ/g_settings.image_scale_ratio), (XBOX_JOYSTICK_SZ/g_settings.image_scale_ratio)};
 
     bool  is_left = (part_id == CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT);
     short axis_x  = (controller) ? SDL_GameControllerGetAxis(controller, (is_left) ? SDL_CONTROLLER_AXIS_LEFTX : SDL_CONTROLLER_AXIS_RIGHTX) : 0;
     short axis_y  = (controller) ? SDL_GameControllerGetAxis(controller, (is_left) ? SDL_CONTROLLER_AXIS_LEFTY : SDL_CONTROLLER_AXIS_RIGHTY) : 0;
 
-    destination.x += axis_x/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
-    destination.y += axis_y/32767.0f * SCALED_MAX_JOYSTICK_DISPLACEMENT_PX;
+    destination.x += axis_x/32767.0f * (MAX_JOYSTICK_DISPLACEMENT_PX/g_settings.image_scale_ratio);
+    destination.y += axis_y/32767.0f * (MAX_JOYSTICK_DISPLACEMENT_PX/g_settings.image_scale_ratio);
 
     if (SDL_GameControllerGetButton(controller, (is_left) ? SDL_CONTROLLER_BUTTON_LEFTSTICK : SDL_CONTROLLER_BUTTON_RIGHTSTICK)) {
         SDL_SetTextureColorMod(asset_set[XBOXCONTROLLER_ASSET_JOYSTICK_FILL], g_settings.activated_color.r, g_settings.activated_color.g, g_settings.activated_color.b);
@@ -81,7 +81,7 @@ static inline void draw_controller_part_joystick(SDL_Renderer* renderer, SDL_Gam
 static inline void draw_controller_part_trigger(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
 {
     auto point = point_set[part_id];
-    SDL_Rect destination = {point.x / g_settings.image_scale_ratio, point.y / g_settings.image_scale_ratio, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
+    SDL_Rect destination = {point.x / g_settings.image_scale_ratio, point.y / g_settings.image_scale_ratio, g_window_width, g_window_height};
 
     bool is_left       = (part_id == CONTROLLER_PUPPET_POINT_LEFT_TRIGGER);
     int  fillmask_id   = (is_left) ? XBOXCONTROLLER_ASSET_LT_FILL : XBOXCONTROLLER_ASSET_RT_FILL;
@@ -92,7 +92,7 @@ static inline void draw_controller_part_trigger(SDL_Renderer* renderer, SDL_Game
                                   (is_left) ? SDL_CONTROLLER_AXIS_TRIGGERLEFT : SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
         : 0;
 
-    destination.y += axis_y/32767.0f * SCALED_MAX_TRIGGER_DISPLACEMENT_PX;
+    destination.y += axis_y/32767.0f * (MAX_TRIGGER_DISPLACEMENT_PX/g_settings.image_scale_ratio);
 
     {
         auto color = lerp_color(g_settings.button_color, g_settings.activated_color, axis_y / 32767.0f);
@@ -154,7 +154,7 @@ void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, con
     // NOTE: enums are Xbox to be more obvious to read, but they are aligned for all controller types.
     // Draw_All_Controller_Parts.
     {
-        SDL_Rect destination = { 0, 0, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT };
+        SDL_Rect destination = { 0, 0, g_window_width, g_window_height };
         SDL_SetTextureColorMod(controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], g_settings.controller_color.r, g_settings.controller_color.g, g_settings.controller_color.b);
         SDL_RenderCopy(renderer, controller_asset_set[XBOXCONTROLLER_ASSET_BASE_FILL], 0, &destination);
 

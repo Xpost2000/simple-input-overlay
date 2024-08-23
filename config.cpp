@@ -48,6 +48,7 @@ void load_config(OverlaySettings& settings)
         input >> _rdtmp; input >> _rdtmp; // Name, Equal Sign
         input >> _rdtmp; settings.activated_color = color_from_hex_string(_rdtmp.c_str());
 
+        input >> _rdtmp; input >> _rdtmp; // Name, Equal Sign
         input >> settings.image_scale_ratio;
     }
 }
