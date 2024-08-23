@@ -253,7 +253,7 @@ static int application_main(int argc, char** argv)
     init_controller_keymap();
 
     DragEventData drag_data = {};
-
+    resize_window_correctly();
 #if 0
     // Install low level keyboard hook
     memset(g_keystate, 256, 0);
@@ -394,7 +394,6 @@ int main(int argc, char** argv)
         g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
         // g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
 
-        resize_window_correctly();
         SDL_SetWindowAlwaysOnTop(g_window, SDL_TRUE);
         make_window_transparent(g_window);
 
