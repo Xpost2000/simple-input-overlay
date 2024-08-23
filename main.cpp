@@ -62,7 +62,7 @@ Uint8 g_keystate[256]; // for the keymap that will be read later, translated int
 // NOTE: centered coordinates
 SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
     {373, 416},
-    {912, 618},
+    {907, 620},
     {0, 0},
     {0, 0},
 
@@ -87,9 +87,27 @@ SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUN
 
 SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
     {519, 634},
-    {936, 634},
+    {931, 634},
     {0, 0},
     {0, 0},
+
+    // Face buttons
+    {1156, 357},
+    {1051, 448},
+    {1154, 528},
+    {1256, 445},
+
+    // Small buttons
+    {411, 311},
+    {1046, 311},
+
+    {303, 385},
+    {309, 506},
+    {246, 446},
+    {372, 446},
+    
+    {304, 184},
+    {1152, 184},
 };
 
 static OverlaySettings g_settings;
