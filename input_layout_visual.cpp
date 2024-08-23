@@ -21,6 +21,9 @@ extern SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUP
 
 extern Uint8 g_keystate[256];
 
+extern int g_window_width;
+extern int g_window_height;
+
 static int g_part_id_to_button[64] = {};
 
 // NOTE: input is obtained here directly,
@@ -54,7 +57,7 @@ static inline SDL_Color lerp_color(SDL_Color a, SDL_Color b, float t) {
 static inline void draw_controller_part_joystick(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
 {
     auto point = point_set[part_id];
-    SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, point.y / IMAGE_SCALE_RATIO - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
+    SDL_Rect destination = {point.x / g_settings.image_scale_ratio - SCALED_JOYSTICK_SZ/2, point.y / g_settings.image_scale_ratio - SCALED_JOYSTICK_SZ/2, SCALED_JOYSTICK_SZ, SCALED_JOYSTICK_SZ};
 
     bool  is_left = (part_id == CONTROLLER_PUPPET_POINT_JOYSTICK_LEFT);
     short axis_x  = (controller) ? SDL_GameControllerGetAxis(controller, (is_left) ? SDL_CONTROLLER_AXIS_LEFTX : SDL_CONTROLLER_AXIS_RIGHTX) : 0;
@@ -78,7 +81,7 @@ static inline void draw_controller_part_joystick(SDL_Renderer* renderer, SDL_Gam
 static inline void draw_controller_part_trigger(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, int part_id, SDL_Texture** asset_set, SDL_Point* point_set)
 {
     auto point = point_set[part_id];
-    SDL_Rect destination = {point.x / IMAGE_SCALE_RATIO, point.y / IMAGE_SCALE_RATIO, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
+    SDL_Rect destination = {point.x / g_settings.image_scale_ratio, point.y / g_settings.image_scale_ratio, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT};
 
     bool is_left       = (part_id == CONTROLLER_PUPPET_POINT_LEFT_TRIGGER);
     int  fillmask_id   = (is_left) ? XBOXCONTROLLER_ASSET_LT_FILL : XBOXCONTROLLER_ASSET_RT_FILL;

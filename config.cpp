@@ -3,10 +3,7 @@
 
 #include <fstream>
 
-#define IMAGE_SCALE_RATIO (2)
-#define CONTROLLER_COLOR   0, 71, 171
-#define PUPPETPIECE_COLOR  15,  30,  30
-#define ACTIVATED_COLOR    200, 30,  50
+#include "constants.h"
 
 #define DEFAULT_INPUT_FILE ("./inputoverlay.cfg")
 

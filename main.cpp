@@ -32,6 +32,9 @@ SDL_Window*         g_window                 = nullptr;
 SDL_Renderer*       g_renderer               = nullptr;
 SDL_GameController* g_focused_gamecontroller = nullptr;
 
+int g_window_width = SCALED_WINDOW_WIDTH;
+int g_window_height = SCALED_WINDOW_HEIGHT;
+
 // Win32 Menus
 HMENU g_context_menu;
 // End Win32 Menus
@@ -241,6 +244,7 @@ static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
 }
 #endif
 
+static void resize_window_correctly(void);
 static int application_main(int argc, char** argv)
 {
     load_config(g_settings);
@@ -288,7 +292,24 @@ static int application_main(int argc, char** argv)
                                 WIN32_color_selector(g_window, &g_settings.activated_color);
                             } break;
 
+                            case 12: {
+                                g_settings.image_scale_ratio = 1;
+                                resize_window_correctly();
+                            } break;
+                            case 13: {
+                                g_settings.image_scale_ratio = 2;
+                                resize_window_correctly();
+                            } break;
                             case 14: {
+                                g_settings.image_scale_ratio = 3;
+                                resize_window_correctly();
+                            } break;
+                            case 15: {
+                                g_settings.image_scale_ratio = 4;
+                                resize_window_correctly();
+                            } break;
+
+                            case 18: {
                                 SDL_Event ev = { .type = SDL_QUIT };
                                 SDL_PushEvent(&ev);
                             } break;
@@ -349,6 +370,14 @@ static int application_main(int argc, char** argv)
     return 0;
 }
 
+static void resize_window_correctly(void)
+{
+    // check asset type to determine resolution
+    g_window_width = XBOX_IMAGE_WIDTH / g_settings.image_scale_ratio;
+    g_window_height = XBOX_IMAGE_HEIGHT / g_settings.image_scale_ratio;
+    SDL_SetWindowSize(g_window, g_window_width, g_window_height);
+}
+
 int main(int argc, char** argv)
 {
     int status_code = 0;
@@ -359,13 +388,13 @@ int main(int argc, char** argv)
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
     {
         g_window = SDL_CreateWindow(
-            "InputOverlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 10, 10,
+            "InputOverlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0,
             SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);  // Resizable needs to check for multiple size.
 
         // g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
         g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
 
-        SDL_SetWindowSize(g_window, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT);
+        resize_window_correctly();
         SDL_SetWindowAlwaysOnTop(g_window, SDL_TRUE);
         make_window_transparent(g_window);
 
@@ -477,14 +506,14 @@ static void initialize_context_menu(void)
     insert_menu_text_item(g_context_menu, "Controller Color", id++); // 9
     insert_menu_text_item(g_context_menu, "Button Color", id++);     // 10
     insert_menu_text_item(g_context_menu, "Activation Color", id++); // 11
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 100%", id++); // 11
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 75%", id++); // 11
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 50%", id++); // 11
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 25%", id++); // 11
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 100%", id++); // 12
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 50%", id++); // 13
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 33%", id++); // 14
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 25%", id++); // 15
 
-    insert_menu_divider_item(g_context_menu, id++);
-    insert_menu_text_item(g_context_menu, "Etc.", id++, false);
-    insert_menu_text_item(g_context_menu, "Exit / Quit", id++);
+    insert_menu_divider_item(g_context_menu, id++); // 16
+    insert_menu_text_item(g_context_menu, "Etc.", id++, false); // 17
+    insert_menu_text_item(g_context_menu, "Exit / Quit", id++); // 18
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Version 0", id++, false);
     insert_menu_text_item(g_context_menu, "Author: xpost2000", id++, false);
