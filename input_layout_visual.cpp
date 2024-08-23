@@ -19,6 +19,8 @@ extern SDL_Texture* g_playstation_controller_assets[20];
 extern SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT];
 extern SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT];
 
+extern Uint8 g_keystate[256];
+
 static int g_part_id_to_button[64] = {};
 
 // NOTE: input is obtained here directly,

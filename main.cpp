@@ -1,22 +1,15 @@
 /*
  * Simple InputOverlay
  *
- * Theming and customization may or may not be added over time for myself, but I never
- * livestream, so I probably won't update this much.
+ * A very simple handmade streaming overlay tool designed mainly to run on win32,
+ * with other platform ports pending...
+ *
+ * Intended to be used with OBS.
+ *
+ * Runs on SDL2 and uses some OS libraries to do some stuff.
  *
  * TODO: Keyboard view
  * TODO: X11 Port.
- * TODO: refactor?
- *
- * A handmade stream overlay tool I guess.
- *
- * Small stuff, this uses SDL2 to abstract across controller types
- * and also to be crossplatform.
- *
- * NOTE: Unfortunately this is not possible to do normally, so I might've
- * actually just been better off doing this raw!
- *
- * But SDL2 as a controller operator is still useful.
  */
 #include "constants.h"
 
@@ -31,14 +24,6 @@
 #include <assert.h>
 #include "config.h"
 
-// Obviously this is a quick toy program so I'm not really trying write something
-// with quality from scratch for real, so we're just going to use the existing SDL2 renderer
-// which is more than enough for this.
-
-// Alternate control schemes should also be supported in the future, but generally controllers
-// and keyboards are the main sources of controlling that I would like to be dealing with.
-
-// Otherwise the program would be like 1k+ lines.
 bool                g_quit                   = false;
 SDL_Window*         g_window                 = nullptr;
 SDL_Renderer*       g_renderer               = nullptr;
@@ -55,10 +40,17 @@ HMENU g_context_menu;
 
 #include "input_layout_visual.h"
 
-static ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+// Flexible theming would be nice, but isn't really simple,
+// so I can only support what I officially provide here.
+//
+// It's not super hard though
+static ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_UNKNOWN;
+static void set_global_controller_asset_set(ControllerAssetSet controller_asset_set);
 
-SDL_Texture* g_xbox_controller_assets[20];
-SDL_Texture* g_playstation_controller_assets[20];
+SDL_Texture* g_xbox_controller_assets[20] = {};
+SDL_Texture* g_playstation_controller_assets[20] = {};
+
+Uint8 g_keystate[256]; // for the keymap that will be read later, translated into private key codes.
 
 // NOTE: centered coordinates
 SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
@@ -112,16 +104,16 @@ static void make_window_transparent(SDL_Window* window)
 #endif
 }
 
-static void load_xbox_controller_assets(void);
-static void load_playstation_controller_assets(void);
-static void load_keyboard_key_assets(void);
-static void load_controller_assets(void)
+void unload_controller_assets(void)
+{
+    unload_xbox_controller_assets();
+    unload_playstation_controller_assets();
+}
+
+void load_controller_assets(void)
 {
     load_xbox_controller_assets();
     load_playstation_controller_assets();
-#if 0
-    load_keyboard_key_assets();
-#endif
 }
 
 static void initialize_context_menu(void);
@@ -133,13 +125,13 @@ static void assign_initial_controller_asset_set(SDL_GameController* game_control
     switch (controller_type) {
         case SDL_CONTROLLER_TYPE_XBOX360:
         case SDL_CONTROLLER_TYPE_XBOXONE: {
-            g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+            set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
         } break;
 
         case SDL_CONTROLLER_TYPE_PS3:
         case SDL_CONTROLLER_TYPE_PS4:
         case SDL_CONTROLLER_TYPE_PS5: {
-            g_asset_set = CONTROLLER_ASSET_SET_PLAYSTATION;
+            set_global_controller_asset_set(CONTROLLER_ASSET_SET_PLAYSTATION);
         } break;
 
         default:
@@ -152,7 +144,7 @@ static void assign_initial_controller_asset_set(SDL_GameController* game_control
         case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
         case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
         case SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: {
-            g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+            set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
         } break;
     }
 }
@@ -228,9 +220,24 @@ struct DragEventData {
     }
 };
 
+static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    KBDLLHOOKSTRUCT* hook_data = (KBDLLHOOKSTRUCT*)lParam;
+
+    switch (wParam) {
+        case WM_SYSKEYDOWN:
+        case WM_KEYDOWN: {
+        } break;
+        case WM_SYSKEYUP:
+        case WM_KEYUP: {
+        } break;
+    }
+
+    return CallNextHookEx(0, nCode, wParam, lParam);
+}
+
 static int application_main(int argc, char** argv)
 {
-    load_controller_assets();
     load_config(g_settings);
     write_config(g_settings);
     initialize_context_menu();
@@ -238,6 +245,11 @@ static int application_main(int argc, char** argv)
 
     DragEventData drag_data = {};
 
+    // Install low level keyboard hook
+    memset(g_keystate, 256, 0);
+    SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
+
+    set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
     while (!g_quit) {
         SDL_Event event;
 
@@ -252,10 +264,10 @@ static int application_main(int argc, char** argv)
                         int selected_option = 0;
                         switch (selected_option = do_context_menu(event.button.x, event.button.y)) {
                             case 4: { // Xbox
-                                g_asset_set = CONTROLLER_ASSET_SET_XBOX;
+                                set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
                             } break;
                             case 5: { // Playstation
-                                g_asset_set = CONTROLLER_ASSET_SET_PLAYSTATION;
+                                set_global_controller_asset_set(CONTROLLER_ASSET_SET_PLAYSTATION);
                             } break;
 
                             // Color selectors.
@@ -343,7 +355,8 @@ int main(int argc, char** argv)
             "InputOverlay", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 10, 10,
             SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);  // Resizable needs to check for multiple size.
 
-        g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
+        // g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
+        g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
 
         SDL_SetWindowSize(g_window, SCALED_WINDOW_WIDTH, SCALED_WINDOW_HEIGHT);
         SDL_SetWindowAlwaysOnTop(g_window, SDL_TRUE);
@@ -358,7 +371,7 @@ int main(int argc, char** argv)
 
 // This would be an okay case to do an inherited class or something
 // or I would totally be okay with just turning this into an enum class situation again.
-static void load_xbox_controller_assets(void)
+void load_xbox_controller_assets(void)
 {
     for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
         g_xbox_controller_assets[index] =
@@ -366,7 +379,7 @@ static void load_xbox_controller_assets(void)
     }
 }
 
-static void load_playstation_controller_assets(void)
+void load_playstation_controller_assets(void)
 {
     for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
         g_playstation_controller_assets[index] =
@@ -374,7 +387,32 @@ static void load_playstation_controller_assets(void)
     }
 }
 
-static void load_keyboard_key_assets(void)
+void load_keyboard_key_assets(void)
+{
+    assert(0 && "Not done.");
+}
+
+void unload_xbox_controller_assets(void)
+{
+    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
+        if (g_xbox_controller_assets[index]) {
+            SDL_DestroyTexture(g_xbox_controller_assets[index]);
+            g_xbox_controller_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_playstation_controller_assets(void)
+{
+    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
+        if (g_playstation_controller_assets[index]) {
+            SDL_DestroyTexture(g_playstation_controller_assets[index]);
+            g_playstation_controller_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_keyboard_key_assets(void)
 {
     assert(0 && "Not done.");
 }
@@ -450,4 +488,23 @@ static int do_context_menu(int x, int y)
     return TrackPopupMenu(g_context_menu,
                           TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_LEFTALIGN | TPM_BOTTOMALIGN,
                           client_point.x, client_point.y, 0, window, 0);
+}
+
+// makes sure we only load the specific assets we want to load.
+static void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
+{
+    if (g_asset_set != controller_asset_set) {
+        // unload_keyboard_key_assets();
+        unload_controller_assets();
+
+        g_asset_set = controller_asset_set;
+        switch (controller_asset_set) {
+            case CONTROLLER_ASSET_SET_XBOX: {
+                load_xbox_controller_assets();
+            } break;
+            case CONTROLLER_ASSET_SET_PLAYSTATION: {
+                load_playstation_controller_assets();
+            } break;
+        }
+    }
 }
