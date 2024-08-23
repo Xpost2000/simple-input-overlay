@@ -58,12 +58,31 @@ SDL_Texture* g_playstation_controller_assets[20] = {};
 
 Uint8 g_keystate[256]; // for the keymap that will be read later, translated into private key codes.
 
+// TODO: make tunable?
 // NOTE: centered coordinates
 SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
     {373, 416},
     {912, 618},
     {0, 0},
     {0, 0},
+
+    // Face buttons
+    {1091, 319},
+    {995, 408},
+    {1087, 495},
+    {1185, 402},
+
+    // Small buttons
+    {628, 412},
+    {830, 412},
+
+    {550, 552},
+    {550, 680},
+    {482, 620},
+    {617, 620},
+    
+    {395, 139},
+    {1066, 140},
 };
 
 SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
