@@ -6,6 +6,9 @@
  *
  * Intended to be used with OBS.
  *
+ * NOTE: due to the method used to composite the super image, it's a bit expensive admittedly!
+ *       should be optimized to avoid so many fillmask parts! (I should be specifying part locations.)
+ *
  * Runs on SDL2 and uses some OS libraries to do some stuff.
  *
  * TODO: Keyboard view
@@ -220,6 +223,7 @@ struct DragEventData {
     }
 };
 
+#if 0
 static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
 {
     KBDLLHOOKSTRUCT* hook_data = (KBDLLHOOKSTRUCT*)lParam;
@@ -235,6 +239,7 @@ static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
 
     return CallNextHookEx(0, nCode, wParam, lParam);
 }
+#endif
 
 static int application_main(int argc, char** argv)
 {
@@ -245,9 +250,11 @@ static int application_main(int argc, char** argv)
 
     DragEventData drag_data = {};
 
+#if 0
     // Install low level keyboard hook
     memset(g_keystate, 256, 0);
     SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
+#endif
 
     set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
     while (!g_quit) {
@@ -470,6 +477,10 @@ static void initialize_context_menu(void)
     insert_menu_text_item(g_context_menu, "Controller Color", id++); // 9
     insert_menu_text_item(g_context_menu, "Button Color", id++);     // 10
     insert_menu_text_item(g_context_menu, "Activation Color", id++); // 11
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 100%", id++); // 11
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 75%", id++); // 11
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 50%", id++); // 11
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 25%", id++); // 11
 
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Etc.", id++, false);
