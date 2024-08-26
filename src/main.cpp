@@ -234,13 +234,14 @@ static int application_main(int argc, char** argv)
     init_controller_keymap();
 
     DragEventData drag_data = {};
-    resize_window_correctly();
 
     // Install low level keyboard hook
     memset(g_keystate, 256, 0);
     SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
 
     set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
+    resize_window_correctly();
+
     while (!g_quit) {
         SDL_Event event;
 
@@ -363,8 +364,7 @@ static int application_main(int argc, char** argv)
 static void resize_window_correctly(void)
 {
     // check asset type to determine resolution
-    g_window_width = XBOX_IMAGE_WIDTH / g_settings.image_scale_ratio;
-    g_window_height = XBOX_IMAGE_HEIGHT / g_settings.image_scale_ratio;
+    get_current_recommended_screen_size(g_settings, &g_window_width, &g_window_height);
     SDL_SetWindowSize(g_window, g_window_width, g_window_height);
 }
 

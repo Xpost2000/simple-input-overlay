@@ -360,6 +360,7 @@ void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Ui
             } break;
         }
 
+#if 0
         for (unsigned part_index = 0; part_index < upper_limit; ++part_index) {
             unsigned part_asset_id = g_keyboard_puppet_piece_to_asset_id[part_index];
             int part_w; int part_h;
@@ -376,8 +377,8 @@ void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Ui
 
             SDL_RenderCopy(renderer, keyboard_asset_set[part_asset_id], 0, &destination);
         }
+#endif
     }
-    assert(0 && "Not implemented.");
 }
 
 // Asset loading
@@ -541,4 +542,6 @@ void get_current_recommended_screen_size(const OverlaySettings& g_settings, int*
 
     // 0 is the base image index.
     SDL_QueryTexture(asset_set[0], 0, 0, window_width, window_height);
+    *window_width /= g_settings.image_scale_ratio;
+    *window_height /= g_settings.image_scale_ratio;
 }
