@@ -9,6 +9,8 @@
 #include "xbox_controller_asset_id.h"
 #include "controller_asset_set.h"
 
+#include "keyboard_puppet_point_ids.h"
+
 #include "keyboard_asset_id.h"
 #include "keyboard_asset_set.h"
 
@@ -79,6 +81,14 @@ SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POI
     
     {304, 184},
     {1152, 184},
+};
+
+static SDL_Point g_keyboard_puppet_piece_placements[KEYBOARD_PUPPET_POINT_COUNT] = {
+    
+};
+
+static int g_keyboard_puppet_piece_to_asset_id[KEYBOARD_PUPPET_POINT_COUNT] = {
+    
 };
 
 static SDL_Point* get_controller_point_set(ControllerAssetSet asset_set)
@@ -325,13 +335,34 @@ void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, con
     draw_controller_puppet_part(renderer, controller, g_settings, CONTROLLER_PUPPET_POINT_JOYSTICK_RIGHT, controller_asset_set, puppeter_point_set);
 }
 
-// Keylogging is apparently difficult, so this one might not get filled.
-// It's easy enough to do on Windows with an LL hook.
-//
-// Look into RECORD extension for X11.
-//
 void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Uint8* keystate, KeyboardAssetSet asset_set)
 {
+    SDL_Texture** keyboard_asset_set = get_keyboard_asset_set(asset_set);
+    SDL_Point*    puppeter_point_set = g_keyboard_puppet_piece_placements;
+    {
+        {
+            SDL_Rect destination = {0, 0, g_window_width, g_window_height};
+            SDL_SetTextureColorMod(keyboard_asset_set[KEYBOARD_ASSET_BASE], 255, 255, 255);
+            SDL_RenderCopy(renderer, keyboard_asset_set[KEYBOARD_ASSET_BASE], 0, &destination);
+        }
+
+        for (unsigned part_index = 0; part_index < KEYBOARD_PUPPET_POINT_COUNT; ++part_index) {
+            unsigned part_asset_id = g_keyboard_puppet_piece_to_asset_id[part_index];
+            int part_w; int part_h;
+
+            _query_asset(keyboard_asset_set, part_asset_id, &part_w, &part_h);
+            auto point = puppeter_point_set[part_index];
+            SDL_Rect destination = {point.x / g_settings.image_scale_ratio - (part_w/g_settings.image_scale_ratio)/2, point.y / g_settings.image_scale_ratio - (part_h/g_settings.image_scale_ratio)/2, (part_w/g_settings.image_scale_ratio), (part_h/g_settings.image_scale_ratio)};
+
+            if (keystate[part_index]) {
+                SDL_SetTextureColorMod(keyboard_asset_set[part_asset_id], g_settings.activated_color.r, g_settings.activated_color.g, g_settings.activated_color.b);
+            } else {
+                SDL_SetTextureColorMod(keyboard_asset_set[part_asset_id], g_settings.button_color.r, g_settings.button_color.g, g_settings.button_color.b);
+            }
+
+            SDL_RenderCopy(renderer, keyboard_asset_set[part_asset_id], 0, &destination);
+        }
+    }
     assert(0 && "Not implemented.");
 }
 

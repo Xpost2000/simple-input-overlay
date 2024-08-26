@@ -16,6 +16,7 @@ enum KeyboardPuppetPointId {
     KEYBOARD_PUPPET_POINT_KEY_F12,
 
     // TODO;
+    KEYBOARD_PUPPET_POINT_COUNT,
 };
 
 #endif
