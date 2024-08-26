@@ -346,7 +346,21 @@ void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Ui
             SDL_RenderCopy(renderer, keyboard_asset_set[KEYBOARD_ASSET_BASE], 0, &destination);
         }
 
-        for (unsigned part_index = 0; part_index < KEYBOARD_PUPPET_POINT_COUNT; ++part_index) {
+        unsigned upper_limit = -1;
+
+        switch (asset_set) {
+            case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
+                upper_limit = 3;
+            } break;
+            case KEYBOARD_ASSET_SET_TENKEYLESS: {
+                upper_limit = 3;
+            } break;
+            case KEYBOARD_ASSET_SET_FULLSIZE: {
+                upper_limit = KEYBOARD_PUPPET_POINT_COUNT;
+            } break;
+        }
+
+        for (unsigned part_index = 0; part_index < upper_limit; ++part_index) {
             unsigned part_asset_id = g_keyboard_puppet_piece_to_asset_id[part_index];
             int part_w; int part_h;
 
