@@ -5,11 +5,9 @@
  * with other platform ports pending...
  *
  * Intended to be used with OBS.
- *
- * NOTE: due to the method used to composite the super image, it's a bit expensive admittedly!
- *       should be optimized to avoid so many fillmask parts! (I should be specifying part locations.)
- *
+*
  * Runs on SDL2 and uses some OS libraries to do some stuff.
+ * NOTE: only on win32.
  *
  * TODO: Keyboard view
  * TODO: X11 Port.
@@ -332,6 +330,7 @@ static int application_main(int argc, char** argv)
                 case SDL_MOUSEBUTTONDOWN: {
                     if (event.button.button == SDL_BUTTON_RIGHT) {
                         int selected_option = 0;
+
                         switch (selected_option = do_context_menu(event.button.x, event.button.y)) {
                             case 4: { // Xbox
                                 set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
@@ -367,10 +366,19 @@ static int application_main(int argc, char** argv)
                                 g_settings.image_scale_ratio = 4;
                                 resize_window_correctly();
                             } break;
-
-                            case 18: {
+                            case EXIT_QUIT_MENU_ID: {
                                 SDL_Event ev = { .type = SDL_QUIT };
                                 SDL_PushEvent(&ev);
+                            } break;
+
+                            default: {
+                                if (selected_option >= controller_menu_option_start_index && selected_option < controller_menu_option_end_index) {
+                                    ControllerAssetSet asset_id = (ControllerAssetSet)(selected_option - controller_menu_option_start_index);
+                                    set_global_controller_asset_set(asset_id);
+                                } else if (selected_option >= keyboard_menu_option_start_index && selected_option < keyboard_menu_option_end_index) {
+                                    KeyboardAssetSet asset_id = (KeyboardAssetSet)(selected_option - keyboard_menu_option_start_index);
+                                    set_global_keyboard_asset_set(asset_id);
+                                }
                             } break;
                         }
                     } else if (event.button.button == SDL_BUTTON_LEFT) {
