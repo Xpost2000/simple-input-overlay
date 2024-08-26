@@ -1,15 +1,6 @@
 #ifndef KEYBOARD_ASSET_ID_H
 #define KEYBOARD_ASSET_ID_H
 
-// TODO:
-
-// NOTE: the image I use by default is just based on an Apple Magic Keyboard.
-enum KeyboardAssetSet {
-    KEYBOARD_ASSET_SET_ALPHANUMERIC,
-    KEYBOARD_ASSET_SET_TENKEYLESS,
-    KEYBOARD_ASSET_SET_FULLSIZE,
-};
-
 // an asset per key.
 enum KeyboardAssetId {
     // ALPHANUMERIC
@@ -30,6 +21,8 @@ enum KeyboardAssetId {
     // TENKEYLESS
 
     // FULLSIZE
+
+    KEYBOARD_ASSET_COUNT
 };
 
 #endif
