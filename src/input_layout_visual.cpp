@@ -7,6 +7,9 @@
 #include "xbox_controller_asset_id.h"
 #include "controller_asset_set.h"
 
+#include "keyboard_asset_id.h"
+#include "keyboard_asset_set.h"
+
 #include "config.h"
 
 #include <assert.h>
@@ -25,6 +28,7 @@ extern int g_window_width;
 extern int g_window_height;
 
 static int g_part_id_to_button[64] = {};
+static int g_part_id_to_key[256] = {}; // yikes!
 
 // NOTE: input is obtained here directly,
 // ideally input state is retrieved else where though as part of a refactor!
@@ -233,7 +237,7 @@ void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, con
 //
 // Look into RECORD extension for X11.
 //
-void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings)
+void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Uint8* keystate, KeyboardAssetSet asset_set)
 {
     assert(0 && "Not implemented.");
 }

@@ -5,7 +5,7 @@
 
 void init_controller_keymap(void);
 void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, ControllerAssetSet asset_set);
-void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings);
+void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Uint8* keystate, KeyboardAssetSet asset_set);
 
 // NOTE: the method I do the rendering (which requires no config) is already kind of wasteful, so
 // here's my attempt to try and save some memory.

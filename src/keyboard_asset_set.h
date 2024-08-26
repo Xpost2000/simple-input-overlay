@@ -10,5 +10,6 @@ enum KeyboardAssetSet {
 };
 
 extern const char* keyboard_asset_image_list[KEYBOARD_ASSET_SET_COUNT][KEYBOARD_ASSET_COUNT];
+extern const char* keyboard_asset_set_strings[KEYBOARD_ASSET_SET_COUNT];
 
 #endif

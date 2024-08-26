@@ -37,11 +37,32 @@ int g_window_height = SCALED_WINDOW_HEIGHT;
 
 // Win32 Menus
 HMENU g_context_menu;
+
+// important menu key ids.
+static int controller_menu_option_start_index = -1;
+static int controller_menu_option_end_index = -1;
+
+static int keyboard_menu_option_start_index = -1;
+static int keyboard_menu_option_end_index = -1;
+
+#define DEVICE_COLOR_MENU_ID     1119
+#define BUTTON_COLOR_MENU_ID     1120
+#define ACTIVATION_COLOR_MENU_ID 1121
+#define ZOOM_SCALE_0_MENU_ID     1122
+#define ZOOM_SCALE_1_MENU_ID     1123
+#define ZOOM_SCALE_2_MENU_ID     1124
+#define ZOOM_SCALE_3_MENU_ID     1125
+#define EXIT_QUIT_MENU_ID        1126
 // End Win32 Menus
 
 #include "controller_puppet_point_ids.h"
+
 #include "playstation_controller_asset_id.h"
 #include "xbox_controller_asset_id.h"
+
+#include "keyboard_asset_id.h"
+
+#include "keyboard_asset_set.h"
 #include "controller_asset_set.h"
 
 #include "input_layout_visual.h"
@@ -50,7 +71,11 @@ HMENU g_context_menu;
 // so I can only support what I officially provide here.
 //
 // It's not super hard though
-static ControllerAssetSet g_asset_set = CONTROLLER_ASSET_SET_UNKNOWN;
+static ControllerAssetSet g_asset_set          = CONTROLLER_ASSET_SET_UNKNOWN;
+static KeyboardAssetSet   g_keyboard_asset_set = KEYBOARD_ASSET_SET_UNKNOWN;
+static bool               g_using_keyboard     = false;
+
+static void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set);
 static void set_global_controller_asset_set(ControllerAssetSet controller_asset_set);
 
 SDL_Texture* g_xbox_controller_assets[20] = {};
@@ -263,7 +288,6 @@ struct DragEventData {
     }
 };
 
-#if 0
 static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
 {
     KBDLLHOOKSTRUCT* hook_data = (KBDLLHOOKSTRUCT*)lParam;
@@ -279,7 +303,6 @@ static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
 
     return CallNextHookEx(0, nCode, wParam, lParam);
 }
-#endif
 
 static void resize_window_correctly(void);
 static int application_main(int argc, char** argv)
@@ -291,11 +314,10 @@ static int application_main(int argc, char** argv)
 
     DragEventData drag_data = {};
     resize_window_correctly();
-#if 0
+
     // Install low level keyboard hook
     memset(g_keystate, 256, 0);
     SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
-#endif
 
     set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
     while (!g_quit) {
@@ -319,29 +341,29 @@ static int application_main(int argc, char** argv)
                             } break;
 
                             // Color selectors.
-                            case 9: {
+                            case DEVICE_COLOR_MENU_ID: {
                                 WIN32_color_selector(g_window, &g_settings.controller_color);
                             } break;
-                            case 10: {
+                            case BUTTON_COLOR_MENU_ID: {
                                 WIN32_color_selector(g_window, &g_settings.button_color);
                             } break;
-                            case 11: {
+                            case ACTIVATION_COLOR_MENU_ID: {
                                 WIN32_color_selector(g_window, &g_settings.activated_color);
                             } break;
 
-                            case 12: {
+                            case ZOOM_SCALE_0_MENU_ID: {
                                 g_settings.image_scale_ratio = 1;
                                 resize_window_correctly();
                             } break;
-                            case 13: {
+                            case ZOOM_SCALE_1_MENU_ID: {
                                 g_settings.image_scale_ratio = 2;
                                 resize_window_correctly();
                             } break;
-                            case 14: {
+                            case ZOOM_SCALE_2_MENU_ID: {
                                 g_settings.image_scale_ratio = 3;
                                 resize_window_correctly();
                             } break;
-                            case 15: {
+                            case ZOOM_SCALE_3_MENU_ID: {
                                 g_settings.image_scale_ratio = 4;
                                 resize_window_correctly();
                             } break;
@@ -398,7 +420,12 @@ static int application_main(int argc, char** argv)
 
         // NOTE: drawing a keyboard is different!
         SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
-        draw_controller(g_renderer, g_focused_gamecontroller, g_settings, g_asset_set);
+
+        if (g_using_keyboard) {
+            draw_keyboard(g_renderer, g_settings, g_keystate, g_keyboard_asset_set);
+        } else {
+            draw_controller(g_renderer, g_focused_gamecontroller, g_settings, g_asset_set);
+        }
 
         SDL_RenderPresent(g_renderer);
     }
@@ -533,23 +560,35 @@ static void initialize_context_menu(void)
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Input Layout Presets", id++, false);
     insert_menu_divider_item(g_context_menu, id++); // 3 (controller types start at 4)
-    insert_menu_text_item(g_context_menu, "Preset: Xbox Controller", id++);
-    insert_menu_text_item(g_context_menu, "Preset: Dualsense Controller", id++);
+    {
+        controller_menu_option_start_index = id;
+        for (unsigned index = 0; index < CONTROLLER_ASSET_SET_COUNT; ++index) {
+            insert_menu_text_item(g_context_menu, asset_set_strings[index], id++);
+        }
+        controller_menu_option_end_index = id;
+    }
+    {
+        keyboard_menu_option_start_index = id;
+        for (unsigned index = 0; index < KEYBOARD_ASSET_SET_COUNT; ++index) {
+            insert_menu_text_item(g_context_menu, keyboard_asset_set_strings[index], id++);
+        }
+        keyboard_menu_option_end_index = id;
+    }
 
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Customization", id++, false);
     insert_menu_divider_item(g_context_menu, id++);
-    insert_menu_text_item(g_context_menu, "Controller Color", id++); // 9
-    insert_menu_text_item(g_context_menu, "Button Color", id++);     // 10
-    insert_menu_text_item(g_context_menu, "Activation Color", id++); // 11
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 100%", id++); // 12
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 50%", id++); // 13
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 33%", id++); // 14
-    insert_menu_text_item(g_context_menu, "Zoom Scale: 25%", id++); // 15
+    insert_menu_text_item(g_context_menu, "Device Color",     DEVICE_COLOR_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Button/Key Color", BUTTON_COLOR_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Activation Color", ACTIVATION_COLOR_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 100%", ZOOM_SCALE_0_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 50%",  ZOOM_SCALE_1_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 33%",  ZOOM_SCALE_2_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Zoom Scale: 25%",  ZOOM_SCALE_3_MENU_ID);
 
     insert_menu_divider_item(g_context_menu, id++); // 16
     insert_menu_text_item(g_context_menu, "Etc.", id++, false); // 17
-    insert_menu_text_item(g_context_menu, "Exit / Quit", id++); // 18
+    insert_menu_text_item(g_context_menu, "Exit / Quit", EXIT_QUIT_MENU_ID); // 18
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Version 0", id++, false);
     insert_menu_text_item(g_context_menu, "Author: xpost2000", id++, false);
@@ -569,8 +608,8 @@ static int do_context_menu(int x, int y)
 // makes sure we only load the specific assets we want to load.
 static void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
 {
+    g_using_keyboard = false;
     if (g_asset_set != controller_asset_set) {
-        // unload_keyboard_key_assets();
         unload_controller_assets();
 
         g_asset_set = controller_asset_set;
@@ -580,6 +619,28 @@ static void set_global_controller_asset_set(ControllerAssetSet controller_asset_
             } break;
             case CONTROLLER_ASSET_SET_PLAYSTATION: {
                 load_playstation_controller_assets();
+            } break;
+        }
+    }
+}
+
+static void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
+{
+    g_using_keyboard = true;
+    if (g_keyboard_asset_set != keyboard_asset_set) {
+        unload_keyboard_key_assets();
+
+        g_keyboard_asset_set = keyboard_asset_set;
+
+        // TODO;
+        switch (keyboard_asset_set) {
+            case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
+                
+            } break;
+            case KEYBOARD_ASSET_SET_TENKEYLESS: {
+                
+            } break;
+            case KEYBOARD_ASSET_SET_FULLSIZE: {
             } break;
         }
     }

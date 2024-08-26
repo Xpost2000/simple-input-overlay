@@ -10,5 +10,6 @@ enum ControllerAssetSet {
 
 // defined in controller_asset_set.cpp
 extern const char* asset_image_list[CONTROLLER_ASSET_SET_COUNT][XBOXCONTROLLER_ASSET_COUNT];
+extern const char* asset_set_strings[CONTROLLER_ASSET_SET_COUNT];
 
 #endif
