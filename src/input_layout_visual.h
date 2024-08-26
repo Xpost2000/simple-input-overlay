@@ -20,4 +20,7 @@ void unload_keyboard_key_assets(void);
 void unload_controller_assets(void);
 void load_controller_assets(void);
 
+void set_global_controller_asset_set(ControllerAssetSet controller_asset_set);
+void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set);
+
 #endif

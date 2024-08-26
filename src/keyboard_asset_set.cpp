@@ -3,13 +3,13 @@
 
 const char* keyboard_asset_image_list[KEYBOARD_ASSET_SET_COUNT][KEYBOARD_ASSET_COUNT] = {
     { // ALPHANUMERIC
-        
+        "Controllers/KeyboardAlphanumeric/Base.png"
     },
     { // TENKEYLESS
-        
+        "Controllers/KeyboardTenkeyless/Base.png"
     },
     { // FULLSIZE
-        
+        "Controllers/KeyboardFullsize/Base.png"
     }
 };
 

@@ -65,84 +65,13 @@ static int keyboard_menu_option_end_index = -1;
 
 #include "input_layout_visual.h"
 
-// Flexible theming would be nice, but isn't really simple,
-// so I can only support what I officially provide here.
-//
-// It's not super hard though
-static ControllerAssetSet g_asset_set          = CONTROLLER_ASSET_SET_UNKNOWN;
-static KeyboardAssetSet   g_keyboard_asset_set = KEYBOARD_ASSET_SET_UNKNOWN;
-static bool               g_using_keyboard     = false;
-
-static void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set);
-static void set_global_controller_asset_set(ControllerAssetSet controller_asset_set);
-
-SDL_Texture* g_xbox_controller_assets[20] = {};
-SDL_Texture* g_playstation_controller_assets[20] = {};
+ControllerAssetSet g_asset_set          = CONTROLLER_ASSET_SET_UNKNOWN;
+KeyboardAssetSet   g_keyboard_asset_set = KEYBOARD_ASSET_SET_UNKNOWN;
+bool               g_using_keyboard     = false;
 
 Uint8 g_keystate[256]; // for the keymap that will be read later, translated into private key codes.
 
-// TODO: make tunable?
-// NOTE: centered coordinates
-SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
-    {373, 416},
-    {907, 620},
-    {0, 0},
-    {0, 0},
-
-    // Face buttons
-    {1091, 319},
-    {995, 408},
-    {1087, 495},
-    {1185, 402},
-
-    // Small buttons
-    {628, 412},
-    {830, 412},
-
-    {550, 552},
-    {550, 680},
-    {482, 620},
-    {617, 620},
-    
-    {395, 139},
-    {1066, 140},
-};
-
-SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
-    {519, 634},
-    {931, 634},
-    {0, 0},
-    {0, 0},
-
-    // Face buttons
-    {1156, 357},
-    {1051, 448},
-    {1154, 528},
-    {1256, 445},
-
-    // Small buttons
-    {411, 311},
-    {1046, 311},
-
-    {303, 385},
-    {309, 506},
-    {246, 446},
-    {372, 446},
-    
-    {304, 184},
-    {1152, 184},
-};
-
 static OverlaySettings g_settings;
-
-static SDL_Texture* load_image_from_file(SDL_Renderer* renderer, const char* path)
-{
-    SDL_Surface* surface = IMG_Load(path);
-    SDL_Texture* result = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_SetTextureScaleMode(result, SDL_ScaleModeLinear);
-    SDL_FreeSurface(surface);
-    return result;
-}
 
 HWND SDL_get_hwnd(SDL_Window* window)
 {
@@ -174,12 +103,6 @@ void unload_controller_assets(void)
 {
     unload_xbox_controller_assets();
     unload_playstation_controller_assets();
-}
-
-void load_controller_assets(void)
-{
-    load_xbox_controller_assets();
-    load_playstation_controller_assets();
 }
 
 static void initialize_context_menu(void);
@@ -476,54 +399,6 @@ int main(int argc, char** argv)
     return status_code; 
 }
 
-// This would be an okay case to do an inherited class or something
-// or I would totally be okay with just turning this into an enum class situation again.
-void load_xbox_controller_assets(void)
-{
-    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
-        g_xbox_controller_assets[index] =
-            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_XBOX][index]);
-    }
-}
-
-void load_playstation_controller_assets(void)
-{
-    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
-        g_playstation_controller_assets[index] =
-            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_PLAYSTATION][index]);
-    }
-}
-
-void load_keyboard_key_assets(void)
-{
-    assert(0 && "Not done.");
-}
-
-void unload_xbox_controller_assets(void)
-{
-    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
-        if (g_xbox_controller_assets[index]) {
-            SDL_DestroyTexture(g_xbox_controller_assets[index]);
-            g_xbox_controller_assets[index] = nullptr;
-        }
-    }
-}
-
-void unload_playstation_controller_assets(void)
-{
-    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
-        if (g_playstation_controller_assets[index]) {
-            SDL_DestroyTexture(g_playstation_controller_assets[index]);
-            g_playstation_controller_assets[index] = nullptr;
-        }
-    }
-}
-
-void unload_keyboard_key_assets(void)
-{
-    assert(0 && "Not done.");
-}
-
 // This is mostly win32.
 static void insert_menu_text_item(HMENU menu_parent, const char* text, int id, bool selectable=true)
 {
@@ -611,45 +486,4 @@ static int do_context_menu(int x, int y)
     return TrackPopupMenu(g_context_menu,
                           TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_LEFTALIGN | TPM_BOTTOMALIGN,
                           client_point.x, client_point.y, 0, window, 0);
-}
-
-// makes sure we only load the specific assets we want to load.
-static void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
-{
-    g_using_keyboard = false;
-    if (g_asset_set != controller_asset_set) {
-        unload_controller_assets();
-
-        g_asset_set = controller_asset_set;
-        switch (controller_asset_set) {
-            case CONTROLLER_ASSET_SET_XBOX: {
-                load_xbox_controller_assets();
-            } break;
-            case CONTROLLER_ASSET_SET_PLAYSTATION: {
-                load_playstation_controller_assets();
-            } break;
-        }
-    }
-}
-
-static void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
-{
-    g_using_keyboard = true;
-    if (g_keyboard_asset_set != keyboard_asset_set) {
-        unload_keyboard_key_assets();
-
-        g_keyboard_asset_set = keyboard_asset_set;
-
-        // TODO;
-        switch (keyboard_asset_set) {
-            case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
-                
-            } break;
-            case KEYBOARD_ASSET_SET_TENKEYLESS: {
-                
-            } break;
-            case KEYBOARD_ASSET_SET_FULLSIZE: {
-            } break;
-        }
-    }
 }

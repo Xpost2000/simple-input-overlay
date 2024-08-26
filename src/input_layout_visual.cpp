@@ -1,6 +1,7 @@
 #include "constants.h"
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #include "controller_puppet_point_ids.h"
 #include "playstation_controller_asset_id.h"
@@ -16,11 +17,69 @@
 
 #include "input_layout_visual.h"
 
-extern SDL_Texture* g_xbox_controller_assets[20];
-extern SDL_Texture* g_playstation_controller_assets[20];
+extern SDL_Renderer*      g_renderer;
+extern ControllerAssetSet g_asset_set;
+extern KeyboardAssetSet   g_keyboard_asset_set;
+extern bool               g_using_keyboard;
 
-extern SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT];
-extern SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT];
+SDL_Texture* g_xbox_controller_assets[XBOXCONTROLLER_ASSET_COUNT]               = {};
+SDL_Texture* g_playstation_controller_assets[PLAYSTATIONCONTROLLER_ASSET_COUNT] = {};
+SDL_Texture* g_keyboard_alphanumeric_assets[KEYBOARD_ASSET_COUNT]               = {};
+SDL_Texture* g_keyboard_tenkeyless_assets[KEYBOARD_ASSET_COUNT]                 = {};
+SDL_Texture* g_keyboard_fullsize_assets[KEYBOARD_ASSET_COUNT]                   = {};
+
+// TODO: make tunable?
+// NOTE: centered coordinates
+SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
+    {373, 416},
+    {907, 620},
+    {0, 0},
+    {0, 0},
+
+    // Face buttons
+    {1091, 319},
+    {995, 408},
+    {1087, 495},
+    {1185, 402},
+
+    // Small buttons
+    {628, 412},
+    {830, 412},
+
+    {550, 552},
+    {550, 680},
+    {482, 620},
+    {617, 620},
+    
+    {395, 139},
+    {1066, 140},
+};
+
+SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
+    {519, 634},
+    {931, 634},
+    {0, 0},
+    {0, 0},
+
+    // Face buttons
+    {1156, 357},
+    {1051, 448},
+    {1154, 528},
+    {1256, 445},
+
+    // Small buttons
+    {411, 311},
+    {1046, 311},
+
+    {303, 385},
+    {309, 506},
+    {246, 446},
+    {372, 446},
+    
+    {304, 184},
+    {1152, 184},
+};
+
 
 extern Uint8 g_keystate[256];
 
@@ -240,4 +299,127 @@ void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, con
 void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Uint8* keystate, KeyboardAssetSet asset_set)
 {
     assert(0 && "Not implemented.");
+}
+
+// Asset loading
+static SDL_Texture* load_image_from_file(SDL_Renderer* renderer, const char* path)
+{
+    SDL_Surface* surface = IMG_Load(path);
+    SDL_Texture* result = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_SetTextureScaleMode(result, SDL_ScaleModeLinear);
+    SDL_FreeSurface(surface);
+    return result;
+}
+
+void load_xbox_controller_assets(void)
+{
+    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
+        g_xbox_controller_assets[index] =
+            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_XBOX][index]);
+    }
+}
+
+void load_playstation_controller_assets(void)
+{
+    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
+        g_playstation_controller_assets[index] =
+            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_PLAYSTATION][index]);
+    }
+}
+
+void unload_xbox_controller_assets(void)
+{
+    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
+        if (g_xbox_controller_assets[index]) {
+            SDL_DestroyTexture(g_xbox_controller_assets[index]);
+            g_xbox_controller_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_playstation_controller_assets(void)
+{
+    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
+        if (g_playstation_controller_assets[index]) {
+            SDL_DestroyTexture(g_playstation_controller_assets[index]);
+            g_playstation_controller_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_keyboard_alphanumeric_assets(void)
+{
+    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
+        if (g_keyboard_alphanumeric_assets[index]) {
+            SDL_DestroyTexture(g_keyboard_alphanumeric_assets[index]);
+            g_keyboard_alphanumeric_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_keyboard_tenkeyless_assets(void)
+{
+    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
+        if (g_keyboard_tenkeyless_assets[index]) {
+            SDL_DestroyTexture(g_keyboard_tenkeyless_assets[index]);
+            g_keyboard_tenkeyless_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_keyboard_fullsize_assets(void)
+{
+    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
+        if (g_keyboard_fullsize_assets[index]) {
+            SDL_DestroyTexture(g_keyboard_fullsize_assets[index]);
+            g_keyboard_fullsize_assets[index] = nullptr;
+        }
+    }
+}
+
+void unload_keyboard_key_assets(void)
+{
+    unload_keyboard_alphanumeric_assets();
+    unload_keyboard_tenkeyless_assets();
+    unload_keyboard_fullsize_assets();
+}
+
+void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
+{
+    g_using_keyboard = false;
+    if (g_asset_set != controller_asset_set) {
+        unload_controller_assets();
+
+        g_asset_set = controller_asset_set;
+        switch (controller_asset_set) {
+            case CONTROLLER_ASSET_SET_XBOX: {
+                load_xbox_controller_assets();
+            } break;
+            case CONTROLLER_ASSET_SET_PLAYSTATION: {
+                load_playstation_controller_assets();
+            } break;
+        }
+    }
+}
+
+void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
+{
+    g_using_keyboard = true;
+    if (g_keyboard_asset_set != keyboard_asset_set) {
+        unload_keyboard_key_assets();
+
+        g_keyboard_asset_set = keyboard_asset_set;
+
+        // TODO;
+        switch (keyboard_asset_set) {
+            case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
+                
+            } break;
+            case KEYBOARD_ASSET_SET_TENKEYLESS: {
+                
+            } break;
+            case KEYBOARD_ASSET_SET_FULLSIZE: {
+            } break;
+        }
+    }
 }

@@ -3,6 +3,8 @@
 
 // an asset per key.
 enum KeyboardAssetId {
+    KEYBOARD_ASSET_BASE,
+
     // ALPHANUMERIC
 
     KEYBOARD_ASSET_F1,
