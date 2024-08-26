@@ -4,6 +4,7 @@
 #include <SDL2/SDL_image.h>
 
 #include "controller_puppet_point_ids.h"
+
 #include "playstation_controller_asset_id.h"
 #include "xbox_controller_asset_id.h"
 #include "controller_asset_set.h"
@@ -80,6 +81,35 @@ SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POI
     {1152, 184},
 };
 
+static SDL_Point* get_controller_point_set(ControllerAssetSet asset_set)
+{
+    switch (asset_set) {
+        case CONTROLLER_ASSET_SET_XBOX: {
+            return g_xbox_controller_puppet_piece_placements;
+        } break;
+        case CONTROLLER_ASSET_SET_PLAYSTATION: {
+            return g_playstation_controller_puppet_piece_placements;
+        } break;
+    }
+
+    return nullptr;
+}
+
+static SDL_Texture** get_controller_asset_set(ControllerAssetSet asset_set)
+{
+    switch (asset_set) {
+        case CONTROLLER_ASSET_SET_XBOX: {
+            return g_xbox_controller_assets;
+        } break;
+        case CONTROLLER_ASSET_SET_PLAYSTATION: {
+            return g_playstation_controller_assets;
+        } break;
+    }
+
+    return nullptr;
+}
+
+static SDL_Texture** get_keyboard_asset_set
 
 extern Uint8 g_keystate[256];
 
@@ -240,19 +270,8 @@ static void set_controller_visual_focus(SDL_Texture** asset_set, SDL_GameControl
 
 void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, ControllerAssetSet asset_set)
 {
-    SDL_Texture** controller_asset_set = g_xbox_controller_assets;
-    SDL_Point*    puppeter_point_set   = g_xbox_controller_puppet_piece_placements;
-
-    switch (asset_set) {
-        case CONTROLLER_ASSET_SET_XBOX: {
-            controller_asset_set = g_xbox_controller_assets;
-            puppeter_point_set = g_xbox_controller_puppet_piece_placements;
-        } break;
-        case CONTROLLER_ASSET_SET_PLAYSTATION: {
-            controller_asset_set = g_playstation_controller_assets;
-            puppeter_point_set = g_playstation_controller_puppet_piece_placements;
-        } break;
-    }
+    SDL_Texture** controller_asset_set = get_controller_asset_set(asset_set);
+    SDL_Point*    puppeter_point_set   = get_controller_point_set(asset_set);
 
     set_controller_visual_focus(controller_asset_set, controller);
     draw_controller_puppet_part(renderer, controller, g_settings, CONTROLLER_PUPPET_POINT_LEFT_TRIGGER, controller_asset_set, puppeter_point_set);
@@ -421,5 +440,14 @@ void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
             case KEYBOARD_ASSET_SET_FULLSIZE: {
             } break;
         }
+    }
+}
+
+void get_current_recommended_screen_size(const OverlaySettings& g_settings, int* window_width, int* window_height)
+{
+    int scale = g_settings.image_scale_ratio;
+
+    if (g_using_keyboard) {
+    } else {
     }
 }

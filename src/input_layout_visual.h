@@ -23,4 +23,6 @@ void load_controller_assets(void);
 void set_global_controller_asset_set(ControllerAssetSet controller_asset_set);
 void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set);
 
+void get_current_recommended_screen_size(const OverlaySettings& g_settings, int* window_width, int* window_height);
+
 #endif

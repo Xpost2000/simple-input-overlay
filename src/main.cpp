@@ -298,9 +298,11 @@ static int application_main(int argc, char** argv)
                                 if (selected_option >= controller_menu_option_start_index && selected_option < controller_menu_option_end_index) {
                                     ControllerAssetSet asset_id = (ControllerAssetSet)(selected_option - controller_menu_option_start_index);
                                     set_global_controller_asset_set(asset_id);
+                                    resize_window_correctly();
                                 } else if (selected_option >= keyboard_menu_option_start_index && selected_option < keyboard_menu_option_end_index) {
                                     KeyboardAssetSet asset_id = (KeyboardAssetSet)(selected_option - keyboard_menu_option_start_index);
                                     set_global_keyboard_asset_set(asset_id);
+                                    resize_window_correctly();
                                 }
                             } break;
                         }
