@@ -109,7 +109,22 @@ static SDL_Texture** get_controller_asset_set(ControllerAssetSet asset_set)
     return nullptr;
 }
 
-static SDL_Texture** get_keyboard_asset_set
+static SDL_Texture** get_keyboard_asset_set(KeyboardAssetSet asset_set)
+{
+    switch (asset_set) {
+        case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
+            return g_keyboard_alphanumeric_assets;
+        } break;
+        case KEYBOARD_ASSET_SET_TENKEYLESS: {
+            return g_keyboard_tenkeyless_assets;
+        } break;
+        case KEYBOARD_ASSET_SET_FULLSIZE: {
+            return g_keyboard_fullsize_assets;
+        } break;
+    }
+
+    return nullptr;
+}
 
 extern Uint8 g_keystate[256];
 
@@ -346,6 +361,30 @@ void load_playstation_controller_assets(void)
     }
 }
 
+void load_keyboard_alphanumeric_assets(void)
+{
+    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
+        g_keyboard_alphanumeric_assets[index] =
+            load_image_from_file(g_renderer, keyboard_asset_image_list[KEYBOARD_ASSET_SET_ALPHANUMERIC][index]);
+    }
+}
+
+void load_keyboard_tenkeyless_assets(void)
+{
+    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
+        g_keyboard_tenkeyless_assets[index] =
+            load_image_from_file(g_renderer, keyboard_asset_image_list[KEYBOARD_ASSET_SET_TENKEYLESS][index]);
+    }
+}
+
+void load_keyboard_fullsize_assets(void)
+{
+    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
+        g_keyboard_fullsize_assets[index] =
+            load_image_from_file(g_renderer, keyboard_asset_image_list[KEYBOARD_ASSET_SET_FULLSIZE][index]);
+    }
+}
+
 void unload_xbox_controller_assets(void)
 {
     for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
@@ -432,12 +471,13 @@ void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
         // TODO;
         switch (keyboard_asset_set) {
             case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
-                
+                load_keyboard_alphanumeric_assets();
             } break;
             case KEYBOARD_ASSET_SET_TENKEYLESS: {
-                
+                load_keyboard_tenkeyless_assets();
             } break;
             case KEYBOARD_ASSET_SET_FULLSIZE: {
+                load_keyboard_fullsize_assets();
             } break;
         }
     }
@@ -446,8 +486,14 @@ void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
 void get_current_recommended_screen_size(const OverlaySettings& g_settings, int* window_width, int* window_height)
 {
     int scale = g_settings.image_scale_ratio;
+    SDL_Texture** asset_set;
 
     if (g_using_keyboard) {
+        asset_set = get_keyboard_asset_set(g_keyboard_asset_set);
     } else {
+        asset_set = get_controller_asset_set(g_asset_set);
     }
+
+    // 0 is the base image index.
+    SDL_QueryTexture(asset_set[0], 0, 0, window_width, window_height);
 }

@@ -255,13 +255,6 @@ static int application_main(int argc, char** argv)
                         int selected_option = 0;
 
                         switch (selected_option = do_context_menu(event.button.x, event.button.y)) {
-                            case 4: { // Xbox
-                                set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
-                            } break;
-                            case 5: { // Playstation
-                                set_global_controller_asset_set(CONTROLLER_ASSET_SET_PLAYSTATION);
-                            } break;
-
                             // Color selectors.
                             case DEVICE_COLOR_MENU_ID: {
                                 WIN32_color_selector(g_window, &g_settings.controller_color);
