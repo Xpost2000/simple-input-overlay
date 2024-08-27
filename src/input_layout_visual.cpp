@@ -20,6 +20,11 @@
 
 #include "input_layout_visual.h"
 
+/*
+  TODO: Maybe consider reading some stuff from a json file.
+  This is the client renderer for the data that is filled in from the main function.
+*/
+
 extern SDL_Renderer*      g_renderer;
 extern ControllerAssetSet g_asset_set;
 extern KeyboardAssetSet   g_keyboard_asset_set;
@@ -31,7 +36,6 @@ SDL_Texture* g_keyboard_alphanumeric_assets[KEYBOARD_ASSET_COUNT]               
 SDL_Texture* g_keyboard_tenkeyless_assets[KEYBOARD_ASSET_COUNT]                 = {};
 SDL_Texture* g_keyboard_fullsize_assets[KEYBOARD_ASSET_COUNT]                   = {};
 
-// TODO: make tunable?
 // NOTE: centered coordinates
 SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
     {373, 416},

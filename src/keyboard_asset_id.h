@@ -4,7 +4,7 @@
 // an asset per key.
 enum KeyboardAssetId {
     KEYBOARD_ASSET_BASE,
-    KEYBOARD_ASSET_COUNT,
+
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U125, // control/windows etc.
     KEYBOARD_ASSET_KEY_U150, // tab
@@ -16,6 +16,7 @@ enum KeyboardAssetId {
 
     // vertical
     KEYBOARD_ASSET_KEY_VU225, // enter
+    KEYBOARD_ASSET_COUNT,
 };
 
 #endif
