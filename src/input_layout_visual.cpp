@@ -180,6 +180,9 @@ static ControllerPuppetPointId xbox_controller_asset_id_to_puppet_point_id(XboxC
         case XBOXCONTROLLER_ASSET_LB_FILL:
             return CONTROLLER_PUPPET_POINT_BUTTON_LB;
     }
+
+    // Shouldn't really happen but okay.
+    return (ControllerPuppetPointId)-1;
 }
 
 void init_controller_keymap(void)
