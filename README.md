@@ -36,9 +36,6 @@ Live controller switching support.
 Keyboard Layout.
 ![Keyboard Layout](./Media/keyboard.gif)
 
-Gameplay Demo from: God of War (c) belongs to Santa Monica Studio.
-![God of War Gameplay demo](./Media/liveswitching.gif)
-
 ## Dependencies
 - SDL2
   - SDL2_image
