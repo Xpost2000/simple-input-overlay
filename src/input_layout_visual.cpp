@@ -733,13 +733,14 @@ void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Ui
 
         for (unsigned part_index = 0; part_index < upper_limit; ++part_index) {
             unsigned part_asset_id = g_keyboard_puppet_piece_to_asset_id[part_index];
+            unsigned part_to_key = g_part_id_to_key[part_index];
             int part_w; int part_h;
 
             _query_asset(keyboard_asset_set, part_asset_id, &part_w, &part_h);
             auto point = puppeter_point_set[part_index];
             SDL_Rect destination = {point.x / g_settings.image_scale_ratio - (part_w/g_settings.image_scale_ratio)/2, point.y / g_settings.image_scale_ratio - (part_h/g_settings.image_scale_ratio)/2, (part_w/g_settings.image_scale_ratio), (part_h/g_settings.image_scale_ratio)};
 
-            if (keystate[part_index]) {
+            if (keystate[part_to_key]) {
                 SDL_SetTextureColorMod(keyboard_asset_set[part_asset_id], g_settings.activated_color.r, g_settings.activated_color.g, g_settings.activated_color.b);
             } else {
                 SDL_SetTextureColorMod(keyboard_asset_set[part_asset_id], g_settings.button_color.r, g_settings.button_color.g, g_settings.button_color.b);
