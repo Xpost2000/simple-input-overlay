@@ -89,8 +89,8 @@ SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POI
 
 #define KB_ROW0_Y (60)
 #define KB_ROW1_Y (205)
-#define KB_ROW2_Y (315)
-#define KB_ROW3_Y (425)
+#define KB_ROW2_Y (317)
+#define KB_ROW3_Y (427)
 #define KB_ROW4_Y (540)
 #define KB_ROW5_Y (652)
 
@@ -219,6 +219,7 @@ static SDL_Point g_keyboard_puppet_piece_placements[KEYBOARD_PUPPET_POINT_COUNT]
 
     {2487, 372},
     {2487, 594},
+    {2375, KB_ROW5_Y},
 };
 
 #undef KB_ROW0_Y
@@ -244,6 +245,7 @@ static int g_keyboard_puppet_piece_to_asset_id[KEYBOARD_PUPPET_POINT_COUNT] = {
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
 
+    KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
@@ -330,7 +332,7 @@ static int g_keyboard_puppet_piece_to_asset_id[KEYBOARD_PUPPET_POINT_COUNT] = {
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
-    KEYBOARD_ASSET_KEY_U225,
+    KEYBOARD_ASSET_KEY_U2,
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
     KEYBOARD_ASSET_KEY_U1,
@@ -597,12 +599,6 @@ void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Ui
     SDL_Texture** keyboard_asset_set = get_keyboard_asset_set(asset_set);
     SDL_Point*    puppeter_point_set = g_keyboard_puppet_piece_placements;
     {
-        {
-            SDL_Rect destination = {0, 0, g_window_width, g_window_height};
-            SDL_SetTextureColorMod(keyboard_asset_set[KEYBOARD_ASSET_BASE], 255, 255, 255);
-            SDL_RenderCopy(renderer, keyboard_asset_set[KEYBOARD_ASSET_BASE], 0, &destination);
-        }
-
         unsigned upper_limit = -1;
 
         switch (asset_set) {
@@ -632,6 +628,12 @@ void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Ui
             }
 
             SDL_RenderCopy(renderer, keyboard_asset_set[part_asset_id], 0, &destination);
+        }
+
+        {
+            SDL_Rect destination = {0, 0, g_window_width, g_window_height};
+            SDL_SetTextureColorMod(keyboard_asset_set[KEYBOARD_ASSET_BASE], 255, 255, 255);
+            SDL_RenderCopy(renderer, keyboard_asset_set[KEYBOARD_ASSET_BASE], 0, &destination);
         }
     }
 }
