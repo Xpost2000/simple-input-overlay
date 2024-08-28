@@ -310,6 +310,8 @@ static int vk_code_to_sdl_scancode(DWORD vk_code, bool extended_key)
         case VK_NUMPAD8: { return SDL_SCANCODE_KP_8; } break;
         case VK_NUMPAD9: { return SDL_SCANCODE_KP_9; } break;
 
+        case VK_TAB: { return SDL_SCANCODE_TAB; } break;
+
         case VK_DECIMAL: { return SDL_SCANCODE_KP_PERIOD; } break;
         case VK_SUBTRACT: { return SDL_SCANCODE_KP_MINUS; } break;
         case VK_MULTIPLY: { return SDL_SCANCODE_KP_MULTIPLY; } break;
