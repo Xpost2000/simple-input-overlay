@@ -1,6 +1,10 @@
 #ifndef KEYBOARD_PUPPET_POINT_IDS_H
 #define KEYBOARD_PUPPET_POINT_IDS_H
 
+// NOTE: it is fine to line these up with the SDL_SCANCODES
+// that I'm actually trying to check against.
+//
+// Cause now I have some conversion functions that are a bit annoying.
 enum KeyboardPuppetPointId {
     // ALPHANUMERIC + FUNCTIONKEYS
     KEYBOARD_PUPPET_POINT_KEY_ESC,

@@ -8,15 +8,15 @@ for the following controllers currently, which are automatically detected:
 - Xbox Series
 - Dualsense
 
-**Although it is capable of supporting whatever controllers SDL2 supports.** Any controller that does not have a preset will default to
-using the Xbox controller assets.
-
-It (currently working on building the preset assets...)will also offer keyboard presets for the following scale layouts:
+It also offers keyboard presets for the following scale layouts:
 - Alphanumeric
 - Tenkeyless
 - Fullsize
 
 The assets used to produced the overlay graphic are based off of https://thoseawesomeguys.com/prompts/
+
+**Although it is capable of supporting whatever controllers SDL2 supports.** Any controller that does not have a preset will default to
+using the Xbox controller assets.
 
 *This program is only designed for Windows currently, even though it uses SDL2 due to the way the interaction is designed!*
 
