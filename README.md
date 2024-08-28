@@ -13,6 +13,8 @@ It also offers keyboard presets for the following scale layouts:
 - Tenkeyless
 - Fullsize
 
+The keyboard input is scancode based, which doesn't really support other layouts.
+
 The assets used to produced the overlay graphic are based off of https://thoseawesomeguys.com/prompts/
 
 **Although it is capable of supporting whatever controllers SDL2 supports.** Any controller that does not have a preset will default to

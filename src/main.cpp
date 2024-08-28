@@ -209,16 +209,146 @@ struct DragEventData {
     }
 };
 
+static int vk_code_to_sdl_scancode(DWORD vk_code, bool extended_key)
+{
+    switch (vk_code) {
+        case '0': { return SDL_SCANCODE_0; } break;
+        case '1': { return SDL_SCANCODE_1; } break;
+        case '2': { return SDL_SCANCODE_2; } break;
+        case '3': { return SDL_SCANCODE_3; } break;
+        case '4': { return SDL_SCANCODE_4; } break;
+        case '5': { return SDL_SCANCODE_5; } break;
+        case '6': { return SDL_SCANCODE_6; } break;
+        case '7': { return SDL_SCANCODE_7; } break;
+        case '8': { return SDL_SCANCODE_8; } break;
+        case '9': { return SDL_SCANCODE_9; } break;
+
+        case VK_OEM_MINUS: { return SDL_SCANCODE_MINUS; } break;
+        case VK_OEM_PLUS: { return SDL_SCANCODE_EQUALS; } break;
+
+        case 'A': { return SDL_SCANCODE_A; } break;
+        case 'B': { return SDL_SCANCODE_B; } break;
+        case 'C': { return SDL_SCANCODE_C; } break;
+        case 'D': { return SDL_SCANCODE_D; } break;
+        case 'E': { return SDL_SCANCODE_E; } break;
+        case 'F': { return SDL_SCANCODE_F; } break;
+        case 'G': { return SDL_SCANCODE_G; } break;
+        case 'H': { return SDL_SCANCODE_H; } break;
+        case 'I': { return SDL_SCANCODE_I; } break;
+        case 'J': { return SDL_SCANCODE_J; } break;
+        case 'K': { return SDL_SCANCODE_K; } break;
+        case 'L': { return SDL_SCANCODE_L; } break;
+        case 'M': { return SDL_SCANCODE_M; } break;
+        case 'N': { return SDL_SCANCODE_N; } break;
+        case 'O': { return SDL_SCANCODE_O; } break;
+        case 'P': { return SDL_SCANCODE_P; } break;
+        case 'Q': { return SDL_SCANCODE_Q; } break;
+        case 'R': { return SDL_SCANCODE_R; } break;
+        case 'S': { return SDL_SCANCODE_S; } break;
+        case 'T': { return SDL_SCANCODE_T; } break;
+        case 'U': { return SDL_SCANCODE_U; } break;
+        case 'V': { return SDL_SCANCODE_V; } break;
+        case 'W': { return SDL_SCANCODE_W; } break;
+        case 'X': { return SDL_SCANCODE_X; } break;
+        case 'Y': { return SDL_SCANCODE_Y; } break;
+        case 'Z': { return SDL_SCANCODE_Z; } break;
+
+        case VK_CAPITAL: { return SDL_SCANCODE_CAPSLOCK; } break;
+
+        case VK_OEM_5: { return SDL_SCANCODE_BACKSLASH; } break;
+        case VK_OEM_2: { return SDL_SCANCODE_SLASH; } break;
+        case VK_OEM_3: { return SDL_SCANCODE_GRAVE; } break;
+
+        case VK_OEM_1: { return SDL_SCANCODE_SEMICOLON; } break;
+        case VK_OEM_4: { return SDL_SCANCODE_LEFTBRACKET; } break;
+        case VK_OEM_6: { return SDL_SCANCODE_RIGHTBRACKET; } break;
+        case VK_OEM_7: { return SDL_SCANCODE_APOSTROPHE; } break;
+
+        case VK_OEM_COMMA: { return SDL_SCANCODE_COMMA; } break;
+        case VK_OEM_PERIOD: { return SDL_SCANCODE_PERIOD; } break;
+
+        case VK_BACK: { return SDL_SCANCODE_BACKSPACE; } break;
+
+        case VK_LSHIFT: { return SDL_SCANCODE_LSHIFT; } break;
+        case VK_RSHIFT: { return SDL_SCANCODE_RSHIFT; } break;
+
+        case VK_LCONTROL: { return SDL_SCANCODE_LCTRL; } break;
+        case VK_RCONTROL: { return SDL_SCANCODE_RCTRL; } break;
+
+        case VK_LMENU: { return SDL_SCANCODE_LALT; } break;
+        case VK_RMENU: { return SDL_SCANCODE_RALT; } break;
+
+        case VK_LWIN: { return SDL_SCANCODE_LGUI; } break;
+        case VK_RWIN: { return SDL_SCANCODE_RGUI; } break;
+
+        case VK_APPS: { return SDL_SCANCODE_MENU; } break;
+
+        case VK_PRINT: { return SDL_SCANCODE_PRINTSCREEN; } break;
+        case VK_NUMLOCK: { return SDL_SCANCODE_NUMLOCKCLEAR; } break;
+        case VK_PAUSE: { return SDL_SCANCODE_PAUSE; } break;
+
+        case VK_INSERT: { return SDL_SCANCODE_INSERT; } break;
+        case VK_DELETE: { return SDL_SCANCODE_DELETE; } break;
+        case VK_HOME: { return SDL_SCANCODE_HOME; } break;
+        case VK_END: { return SDL_SCANCODE_END; } break;
+        case VK_PRIOR: { return SDL_SCANCODE_PAGEUP; } break;
+        case VK_NEXT: { return SDL_SCANCODE_PAGEDOWN; } break;
+
+        case VK_UP: { return SDL_SCANCODE_UP; } break;
+        case VK_DOWN: { return SDL_SCANCODE_DOWN; } break;
+        case VK_LEFT: { return SDL_SCANCODE_LEFT; } break;
+        case VK_RIGHT: { return SDL_SCANCODE_RIGHT; } break;
+
+        case VK_NUMPAD0: { return SDL_SCANCODE_KP_0; } break;
+        case VK_NUMPAD1: { return SDL_SCANCODE_KP_1; } break;
+        case VK_NUMPAD2: { return SDL_SCANCODE_KP_2; } break;
+        case VK_NUMPAD3: { return SDL_SCANCODE_KP_3; } break;
+        case VK_NUMPAD4: { return SDL_SCANCODE_KP_4; } break;
+        case VK_NUMPAD5: { return SDL_SCANCODE_KP_5; } break;
+        case VK_NUMPAD6: { return SDL_SCANCODE_KP_6; } break;
+        case VK_NUMPAD7: { return SDL_SCANCODE_KP_7; } break;
+        case VK_NUMPAD8: { return SDL_SCANCODE_KP_8; } break;
+        case VK_NUMPAD9: { return SDL_SCANCODE_KP_9; } break;
+
+        case VK_DECIMAL: { return SDL_SCANCODE_KP_PERIOD; } break;
+        case VK_SUBTRACT: { return SDL_SCANCODE_KP_MINUS; } break;
+        case VK_MULTIPLY: { return SDL_SCANCODE_KP_MULTIPLY; } break;
+        case VK_ADD: { return SDL_SCANCODE_KP_PLUS; } break;
+
+            // Some keys are not here because they're not part of the preset.
+        case VK_RETURN: {
+            if (extended_key) {
+                return SDL_SCANCODE_RETURN2;
+            } else {
+                return SDL_SCANCODE_RETURN;   
+            }
+        } break;
+        
+    }
+
+    return -1;
+}
+
 static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
 {
     KBDLLHOOKSTRUCT* hook_data = (KBDLLHOOKSTRUCT*)lParam;
+    DWORD vk_code = hook_data->vkCode;
+    DWORD scan_code = hook_data->scanCode;
+
+    int translated_code = vk_code_to_sdl_scancode(vk_code, (hook_data->flags & LLKHF_EXTENDED) > 0);
 
     switch (wParam) {
         case WM_SYSKEYDOWN:
         case WM_KEYDOWN: {
+            if (translated_code != -1) {
+                g_keystate[translated_code] = true;
+            }
         } break;
         case WM_SYSKEYUP:
         case WM_KEYUP: {
+            if (translated_code != -1) {
+                g_keystate[translated_code] = false;
+            }
         } break;
     }
 
@@ -231,7 +361,6 @@ static int application_main(int argc, char** argv)
     load_config(g_settings);
     write_config(g_settings);
     initialize_context_menu();
-    init_controller_keymap();
 
     DragEventData drag_data = {};
 
