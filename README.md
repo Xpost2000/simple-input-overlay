@@ -33,7 +33,10 @@ Playstation Preset Layout.
 Live controller switching support.
 ![Live Switching of Controllers](./Media/liveswitching.gif)
 
-Gameplay Demo from: God of War (c) belongs to Santa Monica Studio
+Keyboard Layout.
+![Keyboard Layout](./Media/keyboard.gif)
+
+Gameplay Demo from: God of War (c) belongs to Santa Monica Studio.
 ![God of War Gameplay demo](./Media/liveswitching.gif)
 
 ## Dependencies
