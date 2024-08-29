@@ -268,6 +268,7 @@ static int vk_code_to_sdl_scancode(DWORD vk_code, bool extended_key)
         case VK_OEM_PERIOD: { return SDL_SCANCODE_PERIOD; } break;
 
         case VK_BACK: { return SDL_SCANCODE_BACKSPACE; } break;
+        case VK_SPACE: { return SDL_SCANCODE_SPACE; } break;
 
         case VK_LSHIFT: { return SDL_SCANCODE_LSHIFT; } break;
         case VK_RSHIFT: { return SDL_SCANCODE_RSHIFT; } break;
