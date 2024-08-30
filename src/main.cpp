@@ -273,8 +273,23 @@ static int vk_code_to_sdl_scancode(DWORD vk_code, bool extended_key)
         case VK_LSHIFT: { return SDL_SCANCODE_LSHIFT; } break;
         case VK_RSHIFT: { return SDL_SCANCODE_RSHIFT; } break;
 
+        case VK_F1: { return SDL_SCANCODE_F1; } break;
+        case VK_F2: { return SDL_SCANCODE_F2; } break;
+        case VK_F3: { return SDL_SCANCODE_F3; } break;
+        case VK_F4: { return SDL_SCANCODE_F4; } break;
+        case VK_F5: { return SDL_SCANCODE_F5; } break;
+        case VK_F6: { return SDL_SCANCODE_F6; } break;
+        case VK_F7: { return SDL_SCANCODE_F7; } break;
+        case VK_F8: { return SDL_SCANCODE_F8; } break;
+        case VK_F9: { return SDL_SCANCODE_F9; } break;
+        case VK_F10: { return SDL_SCANCODE_F10; } break;
+        case VK_F11: { return SDL_SCANCODE_F11; } break;
+        case VK_F12: { return SDL_SCANCODE_F12; } break;
+
         case VK_LCONTROL: { return SDL_SCANCODE_LCTRL; } break;
         case VK_RCONTROL: { return SDL_SCANCODE_RCTRL; } break;
+
+        case VK_SCROLL: { return SDL_SCANCODE_SCROLLLOCK; } break;
 
         case VK_LMENU: { return SDL_SCANCODE_LALT; } break;
         case VK_RMENU: { return SDL_SCANCODE_RALT; } break;
