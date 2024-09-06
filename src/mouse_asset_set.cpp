@@ -12,5 +12,5 @@ const char* mouse_asset_image_list[MOUSE_ASSET_SET_COUNT][MOUSE_ASSET_COUNT] = {
 };
 
 const char* mouse_asset_set_strings[MOUSE_ASSET_SET_COUNT] = {
-    "Mouse - Basic"
+    "Preset: Mouse Basic"
 };
