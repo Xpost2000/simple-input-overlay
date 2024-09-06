@@ -16,6 +16,7 @@
 
 #include "mouse_puppet_point_ids.h"
 #include "mouse_asset_id.h"
+#include "mouse_asset_set.h"
 
 #include "config.h"
 
@@ -680,6 +681,11 @@ static void set_controller_visual_focus(SDL_Texture** asset_set, SDL_GameControl
     }
 }
 
+void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, MouseData* mouse_data)
+{
+    
+}
+
 void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, ControllerAssetSet asset_set)
 {
     SDL_Texture** controller_asset_set = get_controller_asset_set(asset_set);
@@ -777,7 +783,7 @@ static SDL_Texture* load_image_from_file(SDL_Renderer* renderer, const char* pat
     return result;
 }
 
-void load_assets_for(SDL_Texture** target, char* asset_image_list, int asset_count)
+void load_assets_for(SDL_Texture** target, const char** asset_image_list, int asset_count)
 {
     for (unsigned index = 0; index < asset_count; ++index) {
         target[index] = load_image_from_file(g_renderer, asset_image_list[index]);
@@ -794,94 +800,69 @@ void unload_assets_for(SDL_Texture** target, int asset_count)
     }
 }
 
+void load_mouse_assets(void)
+{
+    load_assets_for(g_mouse_assets, mouse_asset_image_list[MOUSE_ASSET_SET_BASE], MOUSE_ASSET_COUNT);
+}
+
+void unload_mouse_assets(void)
+{
+    unload_assets_for(g_mouse_assets, MOUSE_ASSET_COUNT);
+}
+
 void load_xbox_controller_assets(void)
 {
-    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
-        g_xbox_controller_assets[index] =
-            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_XBOX][index]);
-    }
+    load_assets_for(g_xbox_controller_assets,
+                    asset_image_list[CONTROLLER_ASSET_SET_XBOX], XBOXCONTROLLER_ASSET_COUNT);
 }
 
 void load_playstation_controller_assets(void)
 {
-    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
-        g_playstation_controller_assets[index] =
-            load_image_from_file(g_renderer, asset_image_list[CONTROLLER_ASSET_SET_PLAYSTATION][index]);
-    }
+    load_assets_for(g_playstation_controller_assets,
+                    asset_image_list[CONTROLLER_ASSET_SET_PLAYSTATION], PLAYSTATIONCONTROLLER_ASSET_COUNT);
 }
 
 void load_keyboard_alphanumeric_assets(void)
 {
-    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
-        g_keyboard_alphanumeric_assets[index] =
-            load_image_from_file(g_renderer, keyboard_asset_image_list[KEYBOARD_ASSET_SET_ALPHANUMERIC][index]);
-    }
+    load_assets_for(g_keyboard_alphanumeric_assets,
+                    keyboard_asset_image_list[KEYBOARD_ASSET_SET_ALPHANUMERIC], KEYBOARD_ASSET_COUNT);
 }
 
 void load_keyboard_tenkeyless_assets(void)
 {
-    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
-        g_keyboard_tenkeyless_assets[index] =
-            load_image_from_file(g_renderer, keyboard_asset_image_list[KEYBOARD_ASSET_SET_TENKEYLESS][index]);
-    }
+    load_assets_for(g_keyboard_tenkeyless_assets,
+                    keyboard_asset_image_list[KEYBOARD_ASSET_SET_TENKEYLESS], KEYBOARD_ASSET_COUNT);
 }
 
 void load_keyboard_fullsize_assets(void)
 {
-    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
-        g_keyboard_fullsize_assets[index] =
-            load_image_from_file(g_renderer, keyboard_asset_image_list[KEYBOARD_ASSET_SET_FULLSIZE][index]);
-    }
+    load_assets_for(g_keyboard_fullsize_assets,
+                    keyboard_asset_image_list[KEYBOARD_ASSET_SET_FULLSIZE], KEYBOARD_ASSET_COUNT);
 }
 
 void unload_xbox_controller_assets(void)
 {
-    for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
-        if (g_xbox_controller_assets[index]) {
-            SDL_DestroyTexture(g_xbox_controller_assets[index]);
-            g_xbox_controller_assets[index] = nullptr;
-        }
-    }
+    unload_assets_for(g_xbox_controller_assets, XBOXCONTROLLER_ASSET_COUNT);
 }
 
 void unload_playstation_controller_assets(void)
 {
-    for (unsigned index = 0; index < PLAYSTATIONCONTROLLER_ASSET_COUNT; ++index) {
-        if (g_playstation_controller_assets[index]) {
-            SDL_DestroyTexture(g_playstation_controller_assets[index]);
-            g_playstation_controller_assets[index] = nullptr;
-        }
-    }
+    unload_assets_for(g_playstation_controller_assets, PLAYSTATIONCONTROLLER_ASSET_COUNT);
 }
 
 void unload_keyboard_alphanumeric_assets(void)
 {
-    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
-        if (g_keyboard_alphanumeric_assets[index]) {
-            SDL_DestroyTexture(g_keyboard_alphanumeric_assets[index]);
-            g_keyboard_alphanumeric_assets[index] = nullptr;
-        }
-    }
+    unload_assets_for(g_keyboard_alphanumeric_assets, KEYBOARD_ASSET_COUNT);
 }
 
 void unload_keyboard_tenkeyless_assets(void)
 {
-    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
-        if (g_keyboard_tenkeyless_assets[index]) {
-            SDL_DestroyTexture(g_keyboard_tenkeyless_assets[index]);
-            g_keyboard_tenkeyless_assets[index] = nullptr;
-        }
-    }
+    unload_assets_for(g_keyboard_tenkeyless_assets, KEYBOARD_ASSET_COUNT);
 }
 
 void unload_keyboard_fullsize_assets(void)
 {
-    for (unsigned index = 0; index < KEYBOARD_ASSET_COUNT; ++index) {
-        if (g_keyboard_fullsize_assets[index]) {
-            SDL_DestroyTexture(g_keyboard_fullsize_assets[index]);
-            g_keyboard_fullsize_assets[index] = nullptr;
-        }
-    }
+    unload_assets_for(g_keyboard_fullsize_assets, KEYBOARD_ASSET_COUNT);
 }
 
 void unload_keyboard_key_assets(void)

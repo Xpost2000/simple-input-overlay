@@ -3,12 +3,15 @@
 
 // inc SDL.h
 
+// NOTE: For customizable layouts (something that a user could make themselves),
+// I can just expose the drawing subroutines for particular parts like joysticks and stuff
+// which might make it easier to just "customize your own layout" setup.
+
 void init_controller_keymap(void);
 void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, ControllerAssetSet asset_set);
 void draw_keyboard(SDL_Renderer* renderer, const OverlaySettings& g_settings, Uint8* keystate, KeyboardAssetSet asset_set);
-
 // NOTE: only one mouse asset type.
-void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settingsm, MouseData* mouse_data);
+void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, MouseData* mouse_data);
 
 // NOTE: the method I do the rendering (which requires no config) is already kind of wasteful, so
 // here's my attempt to try and save some memory.
