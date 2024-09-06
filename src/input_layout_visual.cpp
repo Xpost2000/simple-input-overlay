@@ -27,7 +27,7 @@
 
 #include "input_layout_visual.h"
 
-#define MOUSE_WIDGET_PADDING_MULTIPLER (1.5)
+#define MOUSE_WIDGET_PADDING_MULTIPLER (3)
 
 /*
   TODO: Maybe consider reading some stuff from a json file.
@@ -701,16 +701,22 @@ void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, Mouse
 
     int mouse_dir_x = (int)mouse_data->move_x;
     int mouse_dir_y = (int)mouse_data->move_y;
+
     float mouse_dir_xf;
     float mouse_dir_yf;
-    float mouse_len   = sqrtf(mouse_dir_x * mouse_dir_x + mouse_dir_y * mouse_dir_y);
+    float mouse_len   = 5.5f;
     if (mouse_dir_x != 0 || mouse_dir_y != 0) {
-        mouse_dir_xf = (float)mouse_dir_x;
-        mouse_dir_yf = (float)mouse_dir_y;
+        mouse_dir_xf = (float)mouse_dir_x / mouse_len;
+        mouse_dir_yf = (float)mouse_dir_y / mouse_len;
     } else {
         mouse_dir_xf = 0;
         mouse_dir_yf = 0;
     }
+
+    if (mouse_dir_xf > 1.0f) mouse_dir_xf = 1.0f;
+    if (mouse_dir_yf > 1.0f) mouse_dir_yf = 1.0f;
+    if (mouse_dir_xf < -1.0f) mouse_dir_xf = -1.0f;
+    if (mouse_dir_yf < -1.0f) mouse_dir_yf = -1.0f;
 
     static float mouse_push_x = 0.0f;
     static float mouse_push_y = 0.0f;
@@ -718,23 +724,16 @@ void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, Mouse
     float mouse_displacement_x;
     float mouse_displacement_y;
 
-    float displacement_x = mouse_push_x * 50.0f + g_window_width/2 - (g_window_width/MOUSE_WIDGET_PADDING_MULTIPLER)/2;
-    float displacement_y = mouse_push_y * 50.0f + g_window_width/2 - (g_window_width/MOUSE_WIDGET_PADDING_MULTIPLER)/2;
+    mouse_push_x = mouse_dir_xf;
+    mouse_push_y = mouse_dir_yf;
 
-#if 0
-    mouse_push_x += mouse_dir_xf * 0.02;
-    mouse_push_y += mouse_dir_yf * 0.02;
+    if (!g_settings.use_mouse_move) {
+        mouse_push_x = 0;
+        mouse_push_y = 0;
+    }
 
-    if (mouse_push_x >= 1.0) mouse_push_x = 1.0;
-    if (mouse_push_x <= -1.0) mouse_push_x = -1.0;
-    if (mouse_push_y >= 1.0) mouse_push_y = 1.0;
-    if (mouse_push_y <= -1.0) mouse_push_y = -1.0;
-
-    if (mouse_push_x > 0.0) mouse_push_x -= 0.01;
-    if (mouse_push_x < 0.0) mouse_push_x += 0.01;
-    if (mouse_push_y > 0.0) mouse_push_y -= 0.01;
-    if (mouse_push_y < 0.0) mouse_push_y += 0.01;
-#endif
+    float displacement_x = mouse_push_x * 90.0f + g_window_width/2 - (g_window_width/MOUSE_WIDGET_PADDING_MULTIPLER)/2;
+    float displacement_y = mouse_push_y * 90.0f + g_window_width/2 - (g_window_width/MOUSE_WIDGET_PADDING_MULTIPLER)/2;
 
     {
         {

@@ -30,7 +30,8 @@ OverlaySettings::OverlaySettings(void) :
     autodetect_controller(false),
     last_device_mode_id(DEVICE_MODE_USING_CONTROLLER),
     last_device_asset_set_id(CONTROLLER_ASSET_SET_XBOX),
-    always_on_top(true)
+    always_on_top(true),
+    use_mouse_move(false)
 {
     
 }
@@ -49,6 +50,7 @@ void write_config(const OverlaySettings& settings)
     output << "LastDeviceType = " << (int)settings.last_device_mode_id << std::endl;
     output << "LastDeviceAssetType = " << (int)settings.last_device_asset_set_id << std::endl;
     output << "AlwaysOnTop = " << (int)settings.always_on_top << std::endl;
+    output << "UseMouseMove = " << (int)settings.use_mouse_move << std::endl;
     output.close();
 }
 
@@ -86,6 +88,8 @@ static bool try_read_config_line(std::ifstream& stream, OverlaySettings& setting
         settings.last_device_asset_set_id = std::max(std::atoi(textvalue.c_str()), 0);
     } else if (fieldname == "AlwaysOnTop") {
         settings.always_on_top = (bool)std::atoi(textvalue.c_str());
+    } else if (fieldname == "UseMouseMove") {
+        settings.use_mouse_move = (bool)std::atoi(textvalue.c_str());
     }
 
     return true;

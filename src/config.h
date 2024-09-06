@@ -15,6 +15,7 @@ struct OverlaySettings {
     int       last_device_asset_set_id;
     bool      autodetect_controller;
     bool      always_on_top;
+    bool      use_mouse_move;
 };
 
 void write_config(const OverlaySettings& settings);

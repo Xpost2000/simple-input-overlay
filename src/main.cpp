@@ -56,6 +56,7 @@ static int mouse_menu_option_end_index = -1;
 #define ZOOM_SCALE_3_MENU_ID          1125
 #define ALWAYS_ON_TOP_MENU_ID         1211
 #define AUTODETECT_CONTROLLER_MENU_ID 1212
+#define USE_MOUSE_MOVE_MENU_ID        1213
 #define EXIT_QUIT_MENU_ID             1126
 // End Win32 Menus
 
@@ -412,12 +413,15 @@ static LRESULT mouse_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
             g_mousedata.buttons[2] = wParam == WM_RBUTTONDOWN;
         } break;
         case WM_MOUSEMOVE: {
-            current_mouse_x = hook_data->pt.x;
-            current_mouse_y = hook_data->pt.y;
-            int move_x = current_mouse_x - last_mouse_x;
-            int move_y = current_mouse_y - last_mouse_y;
             last_mouse_x = current_mouse_x;
             last_mouse_y = current_mouse_y;
+            
+            current_mouse_x = hook_data->pt.x;
+            current_mouse_y = hook_data->pt.y;
+
+            int move_x = current_mouse_x - last_mouse_x;
+            int move_y = current_mouse_y - last_mouse_y;
+
             g_mousedata.move_x = move_x;
             g_mousedata.move_y = move_y;
         } break;
@@ -495,6 +499,10 @@ static int application_main(int argc, char** argv)
 
                             case AUTODETECT_CONTROLLER_MENU_ID: {
                                 g_settings.autodetect_controller ^= 1;
+                            } break;
+
+                            case USE_MOUSE_MOVE_MENU_ID: {
+                                g_settings.use_mouse_move ^= 1;
                             } break;
 
                             case EXIT_QUIT_MENU_ID: {
@@ -716,6 +724,7 @@ static void initialize_context_menu(void)
     insert_menu_text_item(g_context_menu, "Etc.", id++, false); // 17
     insert_menu_text_item(g_context_menu, "Always On Top", ALWAYS_ON_TOP_MENU_ID);
     insert_menu_text_item(g_context_menu, "Autodetect Controller Device", AUTODETECT_CONTROLLER_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Use Mouse Move (Experimental)", USE_MOUSE_MOVE_MENU_ID);
     insert_menu_text_item(g_context_menu, "Exit / Quit", EXIT_QUIT_MENU_ID); // 18
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Version 0.1", id++, false);
@@ -749,6 +758,7 @@ static void update_context_menu_visuals(void)
 
     CheckMenuItem(g_context_menu, ALWAYS_ON_TOP_MENU_ID, (g_settings.always_on_top*0xFFFFFFFF) & MF_CHECKED);
     CheckMenuItem(g_context_menu, AUTODETECT_CONTROLLER_MENU_ID, (g_settings.autodetect_controller*0xFFFFFFFF) & MF_CHECKED);
+    CheckMenuItem(g_context_menu, USE_MOUSE_MOVE_MENU_ID, (g_settings.use_mouse_move*0xFFFFFFFF) & MF_CHECKED);
 
     CheckMenuItem(g_context_menu, ZOOM_SCALE_0_MENU_ID + (g_settings.image_scale_ratio-1), MF_CHECKED);
 }
