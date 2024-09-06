@@ -14,12 +14,17 @@
 #include "keyboard_asset_id.h"
 #include "keyboard_asset_set.h"
 
+#include "mouse_puppet_point_ids.h"
+#include "mouse_asset_id.h"
+
 #include "config.h"
 
 #include <assert.h>
 
-#include "input_layout_visual.h"
 #include "device_mode.h"
+#include "mouse_data.h"
+
+#include "input_layout_visual.h"
 
 /*
   TODO: Maybe consider reading some stuff from a json file.
@@ -36,6 +41,7 @@ SDL_Texture* g_playstation_controller_assets[PLAYSTATIONCONTROLLER_ASSET_COUNT] 
 SDL_Texture* g_keyboard_alphanumeric_assets[KEYBOARD_ASSET_COUNT]               = {};
 SDL_Texture* g_keyboard_tenkeyless_assets[KEYBOARD_ASSET_COUNT]                 = {};
 SDL_Texture* g_keyboard_fullsize_assets[KEYBOARD_ASSET_COUNT]                   = {};
+SDL_Texture* g_mouse_assets[MOUSE_ASSET_COUNT];
 
 // NOTE: centered coordinates
 SDL_Point g_xbox_controller_puppet_piece_placements[CONTROLLER_PUPPET_POINT_COUNT] = {
@@ -393,7 +399,10 @@ static SDL_Texture** get_keyboard_asset_set(KeyboardAssetSet asset_set)
     return nullptr;
 }
 
-extern Uint8 g_keystate[256];
+static SDL_Texture** get_mouse_assets(void)
+{
+    return g_mouse_assets;
+}
 
 extern int g_window_width;
 extern int g_window_height;
@@ -768,6 +777,23 @@ static SDL_Texture* load_image_from_file(SDL_Renderer* renderer, const char* pat
     return result;
 }
 
+void load_assets_for(SDL_Texture** target, char* asset_image_list, int asset_count)
+{
+    for (unsigned index = 0; index < asset_count; ++index) {
+        target[index] = load_image_from_file(g_renderer, asset_image_list[index]);
+    }
+}
+
+void unload_assets_for(SDL_Texture** target, int asset_count)
+{
+    for (unsigned index = 0; index < asset_count; ++index) {
+        if (target[index]) {
+            SDL_DestroyTexture(target[index]);
+            target[index] = nullptr;
+        }
+    }
+}
+
 void load_xbox_controller_assets(void)
 {
     for (unsigned index = 0; index < XBOXCONTROLLER_ASSET_COUNT; ++index) {
@@ -865,10 +891,20 @@ void unload_keyboard_key_assets(void)
     unload_keyboard_fullsize_assets();
 }
 
+void unload_controller_assets(void)
+{
+    unload_xbox_controller_assets();
+    unload_playstation_controller_assets();
+}
+
 void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
 {
-    g_using_keyboard = false;
-    if (g_asset_set != controller_asset_set) {
+    DeviceMode old_device_mode = g_using_device;
+    g_using_device = DEVICE_MODE_USING_CONTROLLER;
+    unload_controller_assets();
+    unload_mouse_assets();
+    
+    if (g_asset_set != controller_asset_set || old_device_mode != DEVICE_MODE_USING_CONTROLLER) {
         unload_controller_assets();
 
         g_asset_set = controller_asset_set;
@@ -885,8 +921,12 @@ void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
 
 void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
 {
-    g_using_keyboard = true;
-    if (g_keyboard_asset_set != keyboard_asset_set) {
+    DeviceMode old_device_mode = g_using_device;
+    g_using_device = DEVICE_MODE_USING_KEYBOARD;
+    unload_controller_assets();
+    unload_mouse_assets();
+
+    if (g_keyboard_asset_set != keyboard_asset_set || old_device_mode != DEVICE_MODE_USING_KEYBOARD) {
         unload_keyboard_key_assets();
 
         g_keyboard_asset_set = keyboard_asset_set;
@@ -906,19 +946,40 @@ void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
     }
 }
 
+void set_global_mouse_asset(void)
+{
+    DeviceMode old_device_mode = g_using_device;
+    g_using_device = DEVICE_MODE_USING_MOUSE;
+    unload_keyboard_key_assets();
+    unload_controller_assets();
+
+    if (old_device_mode != DEVICE_MODE_USING_MOUSE) {
+        load_mouse_assets();
+    }
+}
+
 void get_current_recommended_screen_size(const OverlaySettings& g_settings, int* window_width, int* window_height)
 {
     int scale = g_settings.image_scale_ratio;
     SDL_Texture** asset_set;
 
-    if (g_using_keyboard) {
-        asset_set = get_keyboard_asset_set(g_keyboard_asset_set);
-    } else {
-        asset_set = get_controller_asset_set(g_asset_set);
+    switch (g_using_device) {
+        case DEVICE_MODE_USING_KEYBOARD: {
+            asset_set = get_keyboard_asset_set(g_keyboard_asset_set);
+        } break;
+        case DEVICE_MODE_USING_MOUSE: {
+            asset_set = get_mouse_assets();
+        } break;
+        case DEVICE_MODE_USING_CONTROLLER: {
+            asset_set = get_controller_asset_set(g_asset_set);
+        } break;
     }
 
     // 0 is the base image index.
     SDL_QueryTexture(asset_set[0], 0, 0, window_width, window_height);
     *window_width /= g_settings.image_scale_ratio;
     *window_height /= g_settings.image_scale_ratio;
+    // // padding for the widgets to move around.
+    // *window_window *= 1.5;
+    // *window_height *= 1.5;
 }

@@ -104,12 +104,6 @@ static void make_window_transparent(SDL_Window* window)
 #endif
 }
 
-void unload_controller_assets(void)
-{
-    unload_xbox_controller_assets();
-    unload_playstation_controller_assets();
-}
-
 static void initialize_context_menu(void);
 static int  do_context_menu(int x, int y);
 
