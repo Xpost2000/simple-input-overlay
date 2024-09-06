@@ -458,6 +458,28 @@ static int application_main(int argc, char** argv)
         g_mousedata.move_x = 0;
         g_mousedata.move_y = 0;
 
+        // check window title
+        {
+            char tmp[255];
+            switch (g_using_device) {
+                case DEVICE_MODE_USING_CONTROLLER: {
+                    if (g_focused_gamecontroller) {
+                        snprintf(tmp, 255, "Input Overlay : Controller - %s",
+                                 SDL_GameControllerName(g_focused_gamecontroller));
+                    } else {
+                        snprintf(tmp, 255, "Input Overlay : Controller - Inactive");
+                    }
+                } break;
+                case DEVICE_MODE_USING_KEYBOARD: {
+                    snprintf(tmp, 255, "Input Overlay : Keyboard");
+                } break;
+                case DEVICE_MODE_USING_MOUSE: {
+                    snprintf(tmp, 255, "Input Overlay : Mouse");
+                } break;
+            }
+            SDL_SetWindowTitle(g_window, tmp);
+        }
+
         // These events aren't really "needed per say..."
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -554,10 +576,6 @@ static int application_main(int argc, char** argv)
                     if (event_data.type == SDL_CONTROLLERDEVICEADDED) {
                         if (g_focused_gamecontroller == nullptr) {
                             g_focused_gamecontroller = SDL_GameControllerOpen(event_data.which);
-                            char tmp[255];
-                            snprintf(tmp, 255, "Input Overlay : Controller - %s (%d)",
-                                     SDL_GameControllerName(g_focused_gamecontroller), event_data.which);
-                            SDL_SetWindowTitle(g_window, tmp);
 
                             if (g_settings.autodetect_controller) {
                                 assign_initial_controller_asset_set(g_focused_gamecontroller);
