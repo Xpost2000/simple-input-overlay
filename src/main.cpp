@@ -64,12 +64,17 @@ static int keyboard_menu_option_end_index = -1;
 #include "controller_asset_set.h"
 
 #include "input_layout_visual.h"
+#include "mouse_data.h"
+
+#include "device_mode.h"
 
 ControllerAssetSet g_asset_set          = CONTROLLER_ASSET_SET_UNKNOWN;
 KeyboardAssetSet   g_keyboard_asset_set = KEYBOARD_ASSET_SET_UNKNOWN;
-bool               g_using_keyboard     = false;
+
+DeviceMode g_using_device = DEVICE_MODE_USING_CONTROLLER;
 
 Uint8 g_keystate[256]; // for the keymap that will be read later, translated into private key codes.
+MouseData g_mousedata;
 
 static OverlaySettings g_settings;
 
@@ -496,10 +501,16 @@ static int application_main(int argc, char** argv)
         // NOTE: drawing a keyboard is different!
         SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
 
-        if (g_using_keyboard) {
-            draw_keyboard(g_renderer, g_settings, g_keystate, g_keyboard_asset_set);
-        } else {
-            draw_controller(g_renderer, g_focused_gamecontroller, g_settings, g_asset_set);
+        switch (g_using_device) {
+            case DEVICE_MODE_USING_CONTROLLER: {
+                draw_controller(g_renderer, g_focused_gamecontroller, g_settings, g_asset_set);
+            } break;
+            case DEVICE_MODE_USING_KEYBOARD: {
+                draw_keyboard(g_renderer, g_settings, g_keystate, g_keyboard_asset_set);
+            } break;
+            case DEVICE_MODE_USING_MOUSE: {
+                draw_mouse(g_renderer, g_settings, g_mousedata);
+            } break;
         }
 
         SDL_RenderPresent(g_renderer);

@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include "input_layout_visual.h"
+#include "device_mode.h"
 
 /*
   TODO: Maybe consider reading some stuff from a json file.
@@ -28,7 +29,7 @@
 extern SDL_Renderer*      g_renderer;
 extern ControllerAssetSet g_asset_set;
 extern KeyboardAssetSet   g_keyboard_asset_set;
-extern bool               g_using_keyboard;
+extern DeviceMode         g_using_device;
 
 SDL_Texture* g_xbox_controller_assets[XBOXCONTROLLER_ASSET_COUNT]               = {};
 SDL_Texture* g_playstation_controller_assets[PLAYSTATIONCONTROLLER_ASSET_COUNT] = {};
