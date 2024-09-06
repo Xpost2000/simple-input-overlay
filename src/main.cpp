@@ -396,8 +396,9 @@ static LRESULT mouse_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
     static int last_mouse_y    = 0;
     static int current_mouse_x = 0;
     static int current_mouse_y = 0;
+    static int writeid = 0;
 
-    MOUSEHOOKSTRUCT* hook_data = (MOUSEHOOKSTRUCT*)lParam;
+    MSLLHOOKSTRUCT* hook_data = (MSLLHOOKSTRUCT*)lParam;
 
     switch (wParam) {
         case WM_LBUTTONUP:
@@ -452,6 +453,10 @@ static int application_main(int argc, char** argv)
 
     while (!g_quit) {
         SDL_Event event;
+
+        // reset when hook is not called.
+        g_mousedata.move_x = 0;
+        g_mousedata.move_y = 0;
 
         // These events aren't really "needed per say..."
         while (SDL_PollEvent(&event)) {

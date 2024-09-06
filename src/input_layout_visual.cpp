@@ -704,7 +704,7 @@ void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, Mouse
 
     float mouse_dir_xf;
     float mouse_dir_yf;
-    float mouse_len   = 5.5f;
+    float mouse_len   = 5.75f;
     if (mouse_dir_x != 0 || mouse_dir_y != 0) {
         mouse_dir_xf = (float)mouse_dir_x / mouse_len;
         mouse_dir_yf = (float)mouse_dir_y / mouse_len;
