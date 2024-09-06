@@ -71,7 +71,7 @@ static int keyboard_menu_option_end_index = -1;
 ControllerAssetSet g_asset_set          = CONTROLLER_ASSET_SET_UNKNOWN;
 KeyboardAssetSet   g_keyboard_asset_set = KEYBOARD_ASSET_SET_UNKNOWN;
 
-DeviceMode g_using_device = DEVICE_MODE_USING_CONTROLLER;
+DeviceMode g_using_device = DEVICE_MODE_UNKNOWN;
 
 Uint8 g_keystate[256]; // for the keymap that will be read later, translated into private key codes.
 MouseData g_mousedata;
@@ -386,7 +386,9 @@ static int application_main(int argc, char** argv)
     memset(g_keystate, 256, 0);
     SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
 
-    set_global_controller_asset_set(CONTROLLER_ASSET_SET_XBOX);
+    set_global_asset((DeviceMode)g_settings.last_device_mode_id,
+                     g_settings.last_device_asset_set_id);
+
     resize_window_correctly();
 
     while (!g_quit) {
@@ -475,7 +477,10 @@ static int application_main(int argc, char** argv)
                             snprintf(tmp, 255, "Input Overlay : Controller - %s (%d)",
                                      SDL_GameControllerName(g_focused_gamecontroller), event_data.which);
                             SDL_SetWindowTitle(g_window, tmp);
-                            assign_initial_controller_asset_set(g_focused_gamecontroller);
+
+                            if (g_settings.autodetect_controller) {
+                                assign_initial_controller_asset_set(g_focused_gamecontroller);
+                            }
                         }
                     } else {
                         SDL_GameControllerClose(g_focused_gamecontroller);
@@ -508,6 +513,22 @@ static int application_main(int argc, char** argv)
         }
 
         SDL_RenderPresent(g_renderer);
+    }
+
+    // Write last used settings for device mode.
+    {
+        g_settings.last_device_mode_id = (int)g_using_device;
+        switch (g_using_device) {
+            case DEVICE_MODE_USING_KEYBOARD: {
+                g_settings.last_device_asset_set_id = (int)g_keyboard_asset_set;
+            } break;
+            case DEVICE_MODE_USING_MOUSE: {
+                g_settings.last_device_asset_set_id = 0;
+            } break;
+            case DEVICE_MODE_USING_CONTROLLER: {
+                g_settings.last_device_asset_set_id = g_asset_set;
+            } break;
+        }
     }
 
     write_config(g_settings);

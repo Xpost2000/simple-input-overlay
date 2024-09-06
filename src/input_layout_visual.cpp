@@ -884,19 +884,16 @@ void set_global_controller_asset_set(ControllerAssetSet controller_asset_set)
     g_using_device = DEVICE_MODE_USING_CONTROLLER;
     unload_controller_assets();
     unload_mouse_assets();
-    
-    if (g_asset_set != controller_asset_set || old_device_mode != DEVICE_MODE_USING_CONTROLLER) {
-        unload_controller_assets();
+    unload_controller_assets();
 
-        g_asset_set = controller_asset_set;
-        switch (controller_asset_set) {
-            case CONTROLLER_ASSET_SET_XBOX: {
-                load_xbox_controller_assets();
-            } break;
-            case CONTROLLER_ASSET_SET_PLAYSTATION: {
-                load_playstation_controller_assets();
-            } break;
-        }
+    g_asset_set = controller_asset_set;
+    switch (controller_asset_set) {
+        case CONTROLLER_ASSET_SET_XBOX: {
+            load_xbox_controller_assets();
+        } break;
+        case CONTROLLER_ASSET_SET_PLAYSTATION: {
+            load_playstation_controller_assets();
+        } break;
     }
 }
 
@@ -906,24 +903,21 @@ void set_global_keyboard_asset_set(KeyboardAssetSet keyboard_asset_set)
     g_using_device = DEVICE_MODE_USING_KEYBOARD;
     unload_controller_assets();
     unload_mouse_assets();
+    unload_keyboard_key_assets();
 
-    if (g_keyboard_asset_set != keyboard_asset_set || old_device_mode != DEVICE_MODE_USING_KEYBOARD) {
-        unload_keyboard_key_assets();
+    g_keyboard_asset_set = keyboard_asset_set;
 
-        g_keyboard_asset_set = keyboard_asset_set;
-
-        // TODO;
-        switch (keyboard_asset_set) {
-            case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
-                load_keyboard_alphanumeric_assets();
-            } break;
-            case KEYBOARD_ASSET_SET_TENKEYLESS: {
-                load_keyboard_tenkeyless_assets();
-            } break;
-            case KEYBOARD_ASSET_SET_FULLSIZE: {
-                load_keyboard_fullsize_assets();
-            } break;
-        }
+    // TODO;
+    switch (keyboard_asset_set) {
+        case KEYBOARD_ASSET_SET_ALPHANUMERIC: {
+            load_keyboard_alphanumeric_assets();
+        } break;
+        case KEYBOARD_ASSET_SET_TENKEYLESS: {
+            load_keyboard_tenkeyless_assets();
+        } break;
+        case KEYBOARD_ASSET_SET_FULLSIZE: {
+            load_keyboard_fullsize_assets();
+        } break;
     }
 }
 
@@ -963,4 +957,20 @@ void get_current_recommended_screen_size(const OverlaySettings& g_settings, int*
     // // padding for the widgets to move around.
     // *window_window *= 1.5;
     // *window_height *= 1.5;
+}
+
+void set_global_asset(DeviceMode mode, int id)
+{
+    switch (mode) {
+        case DEVICE_MODE_USING_KEYBOARD: {
+            set_global_keyboard_asset_set((KeyboardAssetSet)id);
+        } break;
+        case DEVICE_MODE_USING_MOUSE: {
+            set_global_mouse_asset();
+        } break;
+        case DEVICE_MODE_USING_CONTROLLER: {
+            set_global_controller_asset_set((ControllerAssetSet)id);
+        } break;
+    }
+    g_using_device = mode;
 }
