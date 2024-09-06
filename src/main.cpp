@@ -16,6 +16,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <windowsx.h>
 #include <commdlg.h>
 
 #include <SDL2/SDL.h>
@@ -388,6 +389,43 @@ static LRESULT keyboard_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(0, nCode, wParam, lParam);
 }
 
+static LRESULT mouse_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    static int last_mouse_x    = 0;
+    static int last_mouse_y    = 0;
+    static int current_mouse_x = 0;
+    static int current_mouse_y = 0;
+
+    MOUSEHOOKSTRUCT* hook_data = (MOUSEHOOKSTRUCT*)lParam;
+
+    switch (wParam) {
+        case WM_LBUTTONUP:
+        case WM_LBUTTONDOWN: {
+            g_mousedata.buttons[0] = wParam == WM_LBUTTONDOWN;
+        } break;
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP: {
+            g_mousedata.buttons[1] = wParam == WM_MBUTTONDOWN;
+        } break;
+        case WM_RBUTTONUP:
+        case WM_RBUTTONDOWN: {
+            g_mousedata.buttons[2] = wParam == WM_RBUTTONDOWN;
+        } break;
+        case WM_MOUSEMOVE: {
+            current_mouse_x = hook_data->pt.x;
+            current_mouse_y = hook_data->pt.y;
+            int move_x = current_mouse_x - last_mouse_x;
+            int move_y = current_mouse_y - last_mouse_y;
+            last_mouse_x = current_mouse_x;
+            last_mouse_y = current_mouse_y;
+            g_mousedata.move_x = move_x;
+            g_mousedata.move_y = move_y;
+        } break;
+    }
+
+    return CallNextHookEx(0, nCode, wParam, lParam);
+}
+
 static void resize_window_correctly(void);
 static int application_main(int argc, char** argv)
 {
@@ -400,6 +438,7 @@ static int application_main(int argc, char** argv)
     // Install low level keyboard hook
     memset(g_keystate, 256, 0);
     SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
+    SetWindowsHookExA(WH_MOUSE_LL, mouse_input_hook, NULL, 0);
 
     set_global_asset((DeviceMode)g_settings.last_device_mode_id,
                      g_settings.last_device_asset_set_id);

@@ -2,9 +2,6 @@
 #define MOUSE_DATA_H
 
 struct MouseData {
-    int x;
-    int y;
-
     int move_x;
     int move_y;
 

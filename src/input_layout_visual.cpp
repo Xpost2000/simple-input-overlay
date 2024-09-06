@@ -27,6 +27,8 @@
 
 #include "input_layout_visual.h"
 
+#define MOUSE_WIDGET_PADDING_MULTIPLER (1.5)
+
 /*
   TODO: Maybe consider reading some stuff from a json file.
   This is the client renderer for the data that is filled in from the main function.
@@ -697,9 +699,46 @@ void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, Mouse
     SDL_Texture** mouse_asset_set = get_mouse_asset_set();
     SDL_Point*    puppeter_point_set   = get_mouse_point_set();
 
+    int mouse_dir_x = (int)mouse_data->move_x;
+    int mouse_dir_y = (int)mouse_data->move_y;
+    float mouse_dir_xf;
+    float mouse_dir_yf;
+    float mouse_len   = sqrtf(mouse_dir_x * mouse_dir_x + mouse_dir_y * mouse_dir_y);
+    if (mouse_dir_x != 0 || mouse_dir_y != 0) {
+        mouse_dir_xf = (float)mouse_dir_x;
+        mouse_dir_yf = (float)mouse_dir_y;
+    } else {
+        mouse_dir_xf = 0;
+        mouse_dir_yf = 0;
+    }
+
+    static float mouse_push_x = 0.0f;
+    static float mouse_push_y = 0.0f;
+
+    float mouse_displacement_x;
+    float mouse_displacement_y;
+
+    float displacement_x = mouse_push_x * 50.0f + g_window_width/2 - (g_window_width/MOUSE_WIDGET_PADDING_MULTIPLER)/2;
+    float displacement_y = mouse_push_y * 50.0f + g_window_width/2 - (g_window_width/MOUSE_WIDGET_PADDING_MULTIPLER)/2;
+
+#if 0
+    mouse_push_x += mouse_dir_xf * 0.02;
+    mouse_push_y += mouse_dir_yf * 0.02;
+
+    if (mouse_push_x >= 1.0) mouse_push_x = 1.0;
+    if (mouse_push_x <= -1.0) mouse_push_x = -1.0;
+    if (mouse_push_y >= 1.0) mouse_push_y = 1.0;
+    if (mouse_push_y <= -1.0) mouse_push_y = -1.0;
+
+    if (mouse_push_x > 0.0) mouse_push_x -= 0.01;
+    if (mouse_push_x < 0.0) mouse_push_x += 0.01;
+    if (mouse_push_y > 0.0) mouse_push_y -= 0.01;
+    if (mouse_push_y < 0.0) mouse_push_y += 0.01;
+#endif
+
     {
         {
-            SDL_Rect destination = {0, 0, g_window_width, g_window_height};
+            SDL_Rect destination = {displacement_x, displacement_y, g_window_width / MOUSE_WIDGET_PADDING_MULTIPLER, g_window_height / MOUSE_WIDGET_PADDING_MULTIPLER};
             SDL_SetTextureColorMod(mouse_asset_set[MOUSE_ASSET_BASE_FILL], g_settings.controller_color.r, g_settings.controller_color.g, g_settings.controller_color.b);
             SDL_RenderCopy(renderer, mouse_asset_set[MOUSE_ASSET_BASE_FILL], 0, &destination);
 
@@ -715,7 +754,9 @@ void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, Mouse
             _query_asset(mouse_asset_set, part_asset_index, &part_w, &part_h);
 
             auto point = puppeter_point_set[part_index];
-            SDL_Rect destination = {point.x / g_settings.image_scale_ratio - (part_w/g_settings.image_scale_ratio)/2, point.y / g_settings.image_scale_ratio - (part_h/g_settings.image_scale_ratio)/2, (part_w/g_settings.image_scale_ratio), (part_h/g_settings.image_scale_ratio)};
+            SDL_Rect destination = {
+                displacement_x + point.x / g_settings.image_scale_ratio - (part_w/g_settings.image_scale_ratio)/2,
+                displacement_y + point.y / g_settings.image_scale_ratio - (part_h/g_settings.image_scale_ratio)/2, (part_w/g_settings.image_scale_ratio), (part_h/g_settings.image_scale_ratio)};
 
 
             if (mouse_data->buttons[part_index]) {
@@ -981,12 +1022,18 @@ void get_current_recommended_screen_size(const OverlaySettings& g_settings, int*
     int scale = g_settings.image_scale_ratio;
     SDL_Texture** asset_set;
 
+    float xmod = 1.0f;
+    float ymod = 1.0f;
     switch (g_using_device) {
         case DEVICE_MODE_USING_KEYBOARD: {
             asset_set = get_keyboard_asset_set(g_keyboard_asset_set);
         } break;
         case DEVICE_MODE_USING_MOUSE: {
             asset_set = get_mouse_asset_set();
+            // window has more size so I can give the mouse widget space
+            // to "move"
+            xmod = MOUSE_WIDGET_PADDING_MULTIPLER;
+            ymod = MOUSE_WIDGET_PADDING_MULTIPLER;
         } break;
         case DEVICE_MODE_USING_CONTROLLER: {
             asset_set = get_controller_asset_set(g_asset_set);
@@ -998,8 +1045,8 @@ void get_current_recommended_screen_size(const OverlaySettings& g_settings, int*
     *window_width /= g_settings.image_scale_ratio;
     *window_height /= g_settings.image_scale_ratio;
     // // padding for the widgets to move around.
-    // *window_window *= 1.5;
-    // *window_height *= 1.5;
+    *window_width *= xmod;
+    *window_height *= ymod;
 }
 
 void set_global_asset(DeviceMode mode, int id)
