@@ -95,22 +95,6 @@ void load_config(OverlaySettings& settings)
     if (input.is_open()) {
         while (try_read_config_line(input, settings))
             continue;
-        // NOTE: I assume a fixed format, preferably as above.
-        // do not shuffle the order of anything.
-
-        input >> _rdtmp; input >> _rdtmp; // Name, Equal Sign
-        input >> _rdtmp; settings.controller_color = color_from_hex_string(_rdtmp.c_str());
-
-        input >> _rdtmp; input >> _rdtmp; // Name, Equal Sign
-        input >> _rdtmp; settings.button_color = color_from_hex_string(_rdtmp.c_str());
-
-        input >> _rdtmp; input >> _rdtmp; // Name, Equal Sign
-        input >> _rdtmp; settings.activated_color = color_from_hex_string(_rdtmp.c_str());
-
-        input >> _rdtmp; input >> _rdtmp; // Name, Equal Sign
-        input >> _rdtmp;
-        settings.image_scale_ratio = std::max(std::atoi(_rdtmp.c_str()), 1);
-        // input >> settings.image_scale_ratio;
     }
 }
 
