@@ -431,6 +431,43 @@ static LRESULT mouse_input_hook(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(0, nCode, wParam, lParam);
 }
 
+static bool installed_kbd_hook = false;
+static bool installed_mouse_hook = false;
+static HHOOK kbdhook;
+static HHOOK mousehook;
+
+void uninstall_kbd_hook(void)
+{
+    if (installed_kbd_hook) {
+        UnhookWindowsHookEx(kbdhook);
+        installed_kbd_hook = false;
+    }
+}
+
+void install_kbd_hook(void)
+{
+    if (!installed_kbd_hook) {
+        kbdhook = SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
+        installed_kbd_hook = true;
+    }
+}
+
+void uninstall_mouse_hook(void)
+{
+    if (installed_mouse_hook) {
+        UnhookWindowsHookEx(mousehook);
+        installed_mouse_hook = false;
+    }
+}
+
+void install_mouse_hook(void)
+{
+    if (!installed_mouse_hook) {
+        mousehook = SetWindowsHookExA(WH_MOUSE_LL, mouse_input_hook, NULL, 0);
+        installed_mouse_hook = true;
+    }
+}
+
 static void resize_window_correctly(void);
 static int application_main(int argc, char** argv)
 {
@@ -442,8 +479,6 @@ static int application_main(int argc, char** argv)
 
     // Install low level keyboard hook
     memset(g_keystate, 256, 0);
-    SetWindowsHookExA(WH_KEYBOARD_LL, keyboard_input_hook, NULL, 0);
-    SetWindowsHookExA(WH_MOUSE_LL, mouse_input_hook, NULL, 0);
 
     set_global_asset((DeviceMode)g_settings.last_device_mode_id,
                      g_settings.last_device_asset_set_id);
@@ -469,12 +504,18 @@ static int application_main(int argc, char** argv)
                     } else {
                         snprintf(tmp, 255, "Input Overlay : Controller - Inactive");
                     }
+                    uninstall_mouse_hook();
+                    uninstall_kbd_hook();
                 } break;
                 case DEVICE_MODE_USING_KEYBOARD: {
                     snprintf(tmp, 255, "Input Overlay : Keyboard");
+                    uninstall_mouse_hook();
+                    install_kbd_hook();
                 } break;
                 case DEVICE_MODE_USING_MOUSE: {
                     snprintf(tmp, 255, "Input Overlay : Mouse");
+                    install_mouse_hook();
+                    uninstall_kbd_hook();
                 } break;
             }
             SDL_SetWindowTitle(g_window, tmp);
