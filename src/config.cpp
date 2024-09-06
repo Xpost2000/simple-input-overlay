@@ -27,7 +27,7 @@ OverlaySettings::OverlaySettings(void) :
     button_color({PUPPETPIECE_COLOR}),
     activated_color({ACTIVATED_COLOR}),
     image_scale_ratio(IMAGE_SCALE_RATIO),
-    autodetect_controller(true),
+    autodetect_controller(false),
     last_device_mode_id(DEVICE_MODE_USING_CONTROLLER),
     last_device_asset_set_id(CONTROLLER_ASSET_SET_XBOX)
 {

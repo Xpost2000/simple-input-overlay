@@ -110,6 +110,7 @@ static int  do_context_menu(int x, int y);
 static void assign_initial_controller_asset_set(SDL_GameController* game_controller)
 {
     auto controller_type = SDL_GameControllerGetType(game_controller); 
+    g_using_device = DEVICE_MODE_USING_CONTROLLER;
     switch (controller_type) {
         case SDL_CONTROLLER_TYPE_XBOX360:
         case SDL_CONTROLLER_TYPE_XBOXONE: {
@@ -480,6 +481,7 @@ static int application_main(int argc, char** argv)
 
                             if (g_settings.autodetect_controller) {
                                 assign_initial_controller_asset_set(g_focused_gamecontroller);
+                                resize_window_correctly();
                             }
                         }
                     } else {
