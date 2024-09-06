@@ -5,6 +5,6 @@ enum MousePuppetPointId {
     MOUSE_PUPPET_POINT_LEFT,
     MOUSE_PUPPET_POINT_MIDDLE,
     MOUSE_PUPPET_POINT_RIGHT,
-}:
+};
 
 #endif

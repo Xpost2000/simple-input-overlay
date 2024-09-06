@@ -63,10 +63,10 @@ static int keyboard_menu_option_end_index = -1;
 #include "keyboard_asset_set.h"
 #include "controller_asset_set.h"
 
-#include "input_layout_visual.h"
 #include "mouse_data.h"
-
 #include "device_mode.h"
+
+#include "input_layout_visual.h"
 
 ControllerAssetSet g_asset_set          = CONTROLLER_ASSET_SET_UNKNOWN;
 KeyboardAssetSet   g_keyboard_asset_set = KEYBOARD_ASSET_SET_UNKNOWN;
@@ -509,7 +509,7 @@ static int application_main(int argc, char** argv)
                 draw_keyboard(g_renderer, g_settings, g_keystate, g_keyboard_asset_set);
             } break;
             case DEVICE_MODE_USING_MOUSE: {
-                draw_mouse(g_renderer, g_settings, g_mousedata);
+                draw_mouse(g_renderer, g_settings, &g_mousedata);
             } break;
         }
 
