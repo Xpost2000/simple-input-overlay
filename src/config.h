@@ -14,6 +14,7 @@ struct OverlaySettings {
     int       last_device_mode_id;
     int       last_device_asset_set_id;
     bool      autodetect_controller;
+    bool      always_on_top;
 };
 
 void write_config(const OverlaySettings& settings);

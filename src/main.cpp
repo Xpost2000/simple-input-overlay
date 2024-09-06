@@ -43,14 +43,19 @@ static int controller_menu_option_end_index = -1;
 static int keyboard_menu_option_start_index = -1;
 static int keyboard_menu_option_end_index = -1;
 
-#define DEVICE_COLOR_MENU_ID     1119
-#define BUTTON_COLOR_MENU_ID     1120
-#define ACTIVATION_COLOR_MENU_ID 1121
-#define ZOOM_SCALE_0_MENU_ID     1122
-#define ZOOM_SCALE_1_MENU_ID     1123
-#define ZOOM_SCALE_2_MENU_ID     1124
-#define ZOOM_SCALE_3_MENU_ID     1125
-#define EXIT_QUIT_MENU_ID        1126
+static int mouse_menu_option_start_index = -1;
+static int mouse_menu_option_end_index = -1;
+
+#define DEVICE_COLOR_MENU_ID          1119
+#define BUTTON_COLOR_MENU_ID          1120
+#define ACTIVATION_COLOR_MENU_ID      1121
+#define ZOOM_SCALE_0_MENU_ID          1122
+#define ZOOM_SCALE_1_MENU_ID          1123
+#define ZOOM_SCALE_2_MENU_ID          1124
+#define ZOOM_SCALE_3_MENU_ID          1125
+#define ALWAYS_ON_TOP_MENU_ID         1211
+#define AUTODETECT_CONTROLLER_MENU_ID 1212
+#define EXIT_QUIT_MENU_ID             1126
 // End Win32 Menus
 
 #include "controller_puppet_point_ids.h"
@@ -102,6 +107,15 @@ static void make_window_transparent(SDL_Window* window)
                SetLayeredWindowAttributes(windows_handle, CHROMA_KEY_COLOR, 0, LWA_COLORKEY)
            ));
 #endif
+}
+
+static void window_update_on_top(SDL_Window* window)
+{
+    if (g_settings.always_on_top) {
+        SDL_SetWindowAlwaysOnTop(window, SDL_TRUE);
+    } else {
+        SDL_SetWindowAlwaysOnTop(window, SDL_FALSE);
+    }
 }
 
 static void initialize_context_menu(void);
@@ -391,6 +405,7 @@ static int application_main(int argc, char** argv)
                      g_settings.last_device_asset_set_id);
 
     resize_window_correctly();
+    window_update_on_top(g_window);
 
     while (!g_quit) {
         SDL_Event event;
@@ -433,6 +448,16 @@ static int application_main(int argc, char** argv)
                                 g_settings.image_scale_ratio = 4;
                                 resize_window_correctly();
                             } break;
+
+                            case ALWAYS_ON_TOP_MENU_ID: {
+                                g_settings.always_on_top ^= 1;
+                                window_update_on_top(g_window);
+                            } break;
+
+                            case AUTODETECT_CONTROLLER_MENU_ID: {
+                                g_settings.autodetect_controller ^= 1;
+                            } break;
+
                             case EXIT_QUIT_MENU_ID: {
                                 SDL_Event ev = { .type = SDL_QUIT };
                                 SDL_PushEvent(&ev);
@@ -446,6 +471,9 @@ static int application_main(int argc, char** argv)
                                 } else if (selected_option >= keyboard_menu_option_start_index && selected_option < keyboard_menu_option_end_index) {
                                     KeyboardAssetSet asset_id = (KeyboardAssetSet)(selected_option - keyboard_menu_option_start_index);
                                     set_global_keyboard_asset_set(asset_id);
+                                    resize_window_correctly();
+                                } else if (selected_option >= mouse_menu_option_start_index && selected_option < mouse_menu_option_end_index) {
+                                    set_global_mouse_asset();
                                     resize_window_correctly();
                                 }
                             } break;
@@ -558,9 +586,7 @@ int main(int argc, char** argv)
             SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);  // Resizable needs to check for multiple size.
 
         g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
-        // g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
 
-        SDL_SetWindowAlwaysOnTop(g_window, SDL_TRUE);
         make_window_transparent(g_window);
 
         status_code = application_main(argc, argv);
@@ -628,6 +654,13 @@ static void initialize_context_menu(void)
         }
         keyboard_menu_option_end_index = id;
     }
+    {
+        mouse_menu_option_start_index = id;
+        for (unsigned index = 0; index < MOUSE_ASSET_SET_COUNT; ++index) {
+            insert_menu_text_item(g_context_menu, mouse_asset_set_strings[index], id++);
+        }
+        mouse_menu_option_end_index = id;
+    }
 
     insert_menu_divider_item(g_context_menu, id++);
     insert_menu_text_item(g_context_menu, "Customization", id++, false);
@@ -642,10 +675,43 @@ static void initialize_context_menu(void)
 
     insert_menu_divider_item(g_context_menu, id++); // 16
     insert_menu_text_item(g_context_menu, "Etc.", id++, false); // 17
+    insert_menu_text_item(g_context_menu, "Always On Top", ALWAYS_ON_TOP_MENU_ID);
+    insert_menu_text_item(g_context_menu, "Autodetect Controller Device", AUTODETECT_CONTROLLER_MENU_ID);
     insert_menu_text_item(g_context_menu, "Exit / Quit", EXIT_QUIT_MENU_ID); // 18
     insert_menu_divider_item(g_context_menu, id++);
-    insert_menu_text_item(g_context_menu, "Version 0", id++, false);
+    insert_menu_text_item(g_context_menu, "Version 0.1", id++, false);
     insert_menu_text_item(g_context_menu, "Author: xpost2000", id++, false);
+}
+
+static void update_context_menu_visuals(void)
+{
+    // NOTE: should be a better way to synchronize this with the actual state...
+    //
+    // Set preset options.
+    for (int i = controller_menu_option_start_index; i <= mouse_menu_option_end_index; ++i) {
+        CheckMenuItem(g_context_menu, i, MF_UNCHECKED);
+    }
+
+    switch (g_using_device) {
+        case DEVICE_MODE_USING_CONTROLLER: {
+            CheckMenuItem(g_context_menu, controller_menu_option_start_index + (int)g_asset_set, MF_CHECKED);
+        } break;
+        case DEVICE_MODE_USING_KEYBOARD: {
+            CheckMenuItem(g_context_menu, keyboard_menu_option_start_index + (int)g_keyboard_asset_set, MF_CHECKED);
+        } break;
+        case DEVICE_MODE_USING_MOUSE: {
+            CheckMenuItem(g_context_menu, mouse_menu_option_start_index + (int)0, MF_CHECKED);
+        } break;
+    }
+
+    for (int i = ZOOM_SCALE_0_MENU_ID; i <= ZOOM_SCALE_3_MENU_ID; ++i) {
+        CheckMenuItem(g_context_menu, i, MF_UNCHECKED);
+    }
+
+    CheckMenuItem(g_context_menu, ALWAYS_ON_TOP_MENU_ID, (g_settings.always_on_top*0xFFFFFFFF) & MF_CHECKED);
+    CheckMenuItem(g_context_menu, AUTODETECT_CONTROLLER_MENU_ID, (g_settings.autodetect_controller*0xFFFFFFFF) & MF_CHECKED);
+
+    CheckMenuItem(g_context_menu, ZOOM_SCALE_0_MENU_ID + (g_settings.image_scale_ratio-1), MF_CHECKED);
 }
 
 static int do_context_menu(int x, int y)
@@ -654,6 +720,7 @@ static int do_context_menu(int x, int y)
     HWND window = SDL_get_hwnd(g_window);
 
     ClientToScreen(window, &client_point);
+    update_context_menu_visuals();
     return TrackPopupMenu(g_context_menu,
                           TPM_LEFTBUTTON | TPM_RETURNCMD | TPM_LEFTALIGN | TPM_BOTTOMALIGN,
                           client_point.x, client_point.y, 0, window, 0);
