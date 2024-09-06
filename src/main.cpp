@@ -55,16 +55,16 @@ static int keyboard_menu_option_end_index = -1;
 
 #include "controller_puppet_point_ids.h"
 
-#include "playstation_controller_asset_id.h"
+#include "mouse_asset_id.h"
+#include "keyboard_asset_id.h"
 #include "xbox_controller_asset_id.h"
 
-#include "keyboard_asset_id.h"
-
+#include "mouse_asset_set.h"
 #include "keyboard_asset_set.h"
 #include "controller_asset_set.h"
+#include "device_mode.h"
 
 #include "mouse_data.h"
-#include "device_mode.h"
 
 #include "input_layout_visual.h"
 

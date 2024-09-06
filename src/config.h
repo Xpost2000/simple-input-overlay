@@ -10,6 +10,10 @@ struct OverlaySettings {
     SDL_Color button_color;
     SDL_Color activated_color;
     int       image_scale_ratio;
+
+    int       last_device_mode_id;
+    int       last_device_asset_set_id;
+    bool      autodetect_controller;
 };
 
 void write_config(const OverlaySettings& settings);

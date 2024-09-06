@@ -5,13 +5,31 @@
 
 #include "constants.h"
 
+#include "mouse_asset_id.h"
+#include "keyboard_asset_id.h"
+#include "xbox_controller_asset_id.h"
+
+#include "mouse_asset_set.h"
+#include "keyboard_asset_set.h"
+#include "controller_asset_set.h"
+#include "device_mode.h"
+
 #define DEFAULT_INPUT_FILE ("./inputoverlay.cfg")
+
+static int clamp(int v, int a, int b) {
+    if (v < a) return a;
+    if (v > b) return b;
+    return v;
+}
 
 OverlaySettings::OverlaySettings(void) :
     controller_color({CONTROLLER_COLOR}),
     button_color({PUPPETPIECE_COLOR}),
     activated_color({ACTIVATED_COLOR}),
-    image_scale_ratio(IMAGE_SCALE_RATIO)
+    image_scale_ratio(IMAGE_SCALE_RATIO),
+    autodetect_controller(true),
+    last_device_mode_id(DEVICE_MODE_USING_CONTROLLER),
+    last_device_asset_set_id(CONTROLLER_ASSET_SET_XBOX)
 {
     
 }
@@ -26,8 +44,47 @@ void write_config(const OverlaySettings& settings)
     output << "ButtonColor = " << color_into_hex_string(settings.button_color) << std::endl;
     output << "ActivatedColor = " << color_into_hex_string(settings.activated_color) << std::endl;
     output << "ImageScaleRatio = " << settings.image_scale_ratio << std::endl;
-    output << "NOTE: please do not shuffle any of the fields in this file." << std::endl;
+    output << "AutoDetectController = " << (int)settings.autodetect_controller << std::endl;
+    output << "LastDeviceType = " << (int)settings.last_device_mode_id << std::endl;
+    output << "LastDeviceAssetType = " << (int)settings.last_device_asset_set_id << std::endl;
     output.close();
+}
+
+static bool try_read_config_line(std::ifstream& stream, OverlaySettings& settings) {
+    // Only fail if there is no more text.
+    if (stream.eof())
+        return false;
+
+    std::string fieldname;
+    std::string equals;
+    std::string textvalue;
+    std::string garbage;
+
+    stream >> fieldname;
+    if (stream.fail()) return false;
+    stream >> equals;
+    if (stream.fail()) return false;
+    if (equals != "=") std::getline(stream, garbage); // eliminate line hopefully.
+    stream >> textvalue;
+    if (stream.fail()) return false;
+
+    if (fieldname == "ControllerColor") {
+        settings.controller_color = color_from_hex_string(textvalue.c_str());
+    } else if (fieldname == "ButtonColor") {
+        settings.button_color = color_from_hex_string(textvalue.c_str());
+    } else if (fieldname == "ActivatedColor") {
+        settings.activated_color = color_from_hex_string(textvalue.c_str());
+    } else if (fieldname == "ImageScaleRatio") {
+        settings.image_scale_ratio = std::max(std::atoi(textvalue.c_str()), 1);
+    } else if (fieldname == "AutoDetectController") {
+        settings.autodetect_controller = (bool)std::atoi(textvalue.c_str());
+    } else if (fieldname == "LastDeviceType") {
+        settings.last_device_mode_id = clamp(std::atoi(textvalue.c_str()), 0, DEVICE_MODE_COUNT-1);
+    } else if (fieldname == "LastDeviceAssetType") {
+        settings.last_device_asset_set_id = std::max(std::atoi(textvalue.c_str()), 0);
+    }
+
+    return true;
 }
 
 void load_config(OverlaySettings& settings)
@@ -36,6 +93,8 @@ void load_config(OverlaySettings& settings)
     std::ifstream input(DEFAULT_INPUT_FILE);
 
     if (input.is_open()) {
+        while (try_read_config_line(input, settings))
+            continue;
         // NOTE: I assume a fixed format, preferably as above.
         // do not shuffle the order of anything.
 
