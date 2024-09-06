@@ -95,6 +95,10 @@ SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POI
     {1152, 184},
 };
 
+SDL_Point g_mouse_puppet_piece_placements[MOUSE_PUPPET_POINT_COUNT] = {
+    
+};
+
 #define KB_ROW0_Y (60)
 #define KB_ROW1_Y (205)
 #define KB_ROW2_Y (317)
@@ -369,6 +373,11 @@ static SDL_Point* get_controller_point_set(ControllerAssetSet asset_set)
     return nullptr;
 }
 
+static SDL_Point* get_mouse_point_set(void)
+{
+    return g_mouse_puppet_piece_placements;
+}
+
 static SDL_Texture** get_controller_asset_set(ControllerAssetSet asset_set)
 {
     switch (asset_set) {
@@ -400,7 +409,7 @@ static SDL_Texture** get_keyboard_asset_set(KeyboardAssetSet asset_set)
     return nullptr;
 }
 
-static SDL_Texture** get_mouse_assets(void)
+static SDL_Texture** get_mouse_asset_set(void)
 {
     return g_mouse_assets;
 }
@@ -683,7 +692,8 @@ static void set_controller_visual_focus(SDL_Texture** asset_set, SDL_GameControl
 
 void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, MouseData* mouse_data)
 {
-    
+    SDL_Texture** mouse_asset_set = get_mouse_asset_set();
+    SDL_Point*    puppeter_point_set   = get_mouse_point_set();
 }
 
 void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, ControllerAssetSet asset_set)
