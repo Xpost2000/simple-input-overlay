@@ -96,7 +96,9 @@ SDL_Point g_playstation_controller_puppet_piece_placements[CONTROLLER_PUPPET_POI
 };
 
 SDL_Point g_mouse_puppet_piece_placements[MOUSE_PUPPET_POINT_COUNT] = {
-    
+    {180, 244},
+    {268, 160},
+    {364, 244},
 };
 
 #define KB_ROW0_Y (60)
@@ -694,6 +696,37 @@ void draw_mouse(SDL_Renderer* renderer, const OverlaySettings& g_settings, Mouse
 {
     SDL_Texture** mouse_asset_set = get_mouse_asset_set();
     SDL_Point*    puppeter_point_set   = get_mouse_point_set();
+
+    {
+        {
+            SDL_Rect destination = {0, 0, g_window_width, g_window_height};
+            SDL_SetTextureColorMod(mouse_asset_set[MOUSE_ASSET_BASE_FILL], g_settings.controller_color.r, g_settings.controller_color.g, g_settings.controller_color.b);
+            SDL_RenderCopy(renderer, mouse_asset_set[MOUSE_ASSET_BASE_FILL], 0, &destination);
+
+            SDL_SetTextureColorMod(mouse_asset_set[MOUSE_ASSET_BASE], 255, 255, 255);
+            SDL_RenderCopy(renderer, mouse_asset_set[MOUSE_ASSET_BASE], 0, &destination);
+        }
+
+
+        for (unsigned part_index = 0; part_index < MOUSE_PUPPET_POINT_COUNT; ++part_index) {
+            int part_asset_index = part_index + MOUSE_ASSET_LEFT_FILL;
+
+            int part_w; int part_h;
+            _query_asset(mouse_asset_set, part_asset_index, &part_w, &part_h);
+
+            auto point = puppeter_point_set[part_index];
+            SDL_Rect destination = {point.x / g_settings.image_scale_ratio - (part_w/g_settings.image_scale_ratio)/2, point.y / g_settings.image_scale_ratio - (part_h/g_settings.image_scale_ratio)/2, (part_w/g_settings.image_scale_ratio), (part_h/g_settings.image_scale_ratio)};
+
+
+            if (mouse_data->buttons[part_index]) {
+                SDL_SetTextureColorMod(mouse_asset_set[part_asset_index], g_settings.activated_color.r, g_settings.activated_color.g, g_settings.activated_color.b);
+            } else {
+                SDL_SetTextureColorMod(mouse_asset_set[part_asset_index], g_settings.button_color.r, g_settings.button_color.g, g_settings.button_color.b);
+            }
+
+            SDL_RenderCopy(renderer, mouse_asset_set[part_asset_index], 0, &destination);
+        }
+    }
 }
 
 void draw_controller(SDL_Renderer* renderer, SDL_GameController* controller, const OverlaySettings& g_settings, ControllerAssetSet asset_set)
@@ -953,7 +986,7 @@ void get_current_recommended_screen_size(const OverlaySettings& g_settings, int*
             asset_set = get_keyboard_asset_set(g_keyboard_asset_set);
         } break;
         case DEVICE_MODE_USING_MOUSE: {
-            asset_set = get_mouse_assets();
+            asset_set = get_mouse_asset_set();
         } break;
         case DEVICE_MODE_USING_CONTROLLER: {
             asset_set = get_controller_asset_set(g_asset_set);
